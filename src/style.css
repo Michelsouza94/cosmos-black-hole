@@ -1,85 +1,57 @@
-@import url(
-  'https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@300;400;500;600;700&display=swap'
-);
-
-
-/* =========================================================
-   VARIÁVEIS
-========================================================= */
-
 :root {
-
-  --background:
-    #020204;
-
-  --white:
-    #f5f5f2;
-
-  --muted:
-    rgba(245, 245, 242, .58);
-
-  --subtle:
-    rgba(245, 245, 242, .35);
-
-  --line:
-    rgba(255, 255, 255, .12);
-
-  --accent:
-    #d89542;
-
-  --accent-light:
-    #f4c77b;
-
+  --background: #000000;
+  --white: #ffffff;
+  --muted: rgba(255, 255, 255, 0.55);
+  --soft: rgba(255, 255, 255, 0.28);
+  --line: rgba(255, 255, 255, 0.22);
 }
-
-
-/* =========================================================
-   RESET
-========================================================= */
 
 * {
-
   box-sizing: border-box;
-
 }
 
-
 html,
-body,
-#app {
-
+body {
   width: 100%;
   height: 100%;
-
   margin: 0;
+  padding: 0;
 
   overflow: hidden;
 
-}
+  background: #000;
+  color: #fff;
 
+  font-family: "Inter", Arial, sans-serif;
+
+  -webkit-font-smoothing: antialiased;
+}
 
 body {
-
-  background:
-    var(--background);
-
-  color:
-    var(--white);
-
-  font-family:
-    Manrope,
-    sans-serif;
-
+  user-select: none;
 }
 
+button {
+  font: inherit;
+}
+
+#app {
+  position: relative;
+
+  width: 100vw;
+  height: 100vh;
+
+  overflow: hidden;
+
+  background: #000;
+}
 
 /* =========================================================
    CANVAS
 ========================================================= */
 
-canvas {
-
-  position: fixed;
+#space {
+  position: absolute;
 
   inset: 0;
 
@@ -89,593 +61,363 @@ canvas {
   display: block;
 
   cursor: grab;
-
 }
 
-
-canvas:active {
-
+#space:active {
   cursor: grabbing;
-
 }
 
+/* =========================================================
+   VINHETA
+========================================================= */
+
+.vignette {
+  position: absolute;
+
+  inset: 0;
+
+  pointer-events: none;
+
+  z-index: 2;
+
+  background:
+    radial-gradient(
+      circle at 50% 48%,
+      transparent 42%,
+      rgba(0, 0, 0, 0.08) 58%,
+      rgba(0, 0, 0, 0.55) 100%
+    );
+}
+
+/* =========================================================
+   GRAIN
+========================================================= */
+
+.grain {
+  position: absolute;
+
+  inset: -50%;
+
+  z-index: 3;
+
+  pointer-events: none;
+
+  opacity: 0.055;
+
+  background-image:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");
+
+  animation: grainMove 0.18s steps(2) infinite;
+}
+
+@keyframes grainMove {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  25% {
+    transform: translate(2%, -1%);
+  }
+
+  50% {
+    transform: translate(-1%, 2%);
+  }
+
+  75% {
+    transform: translate(1%, 1%);
+  }
+
+  100% {
+    transform: translate(-2%, -1%);
+  }
+}
 
 /* =========================================================
    INTERFACE
 ========================================================= */
 
 .interface {
+  position: relative;
 
-  position: fixed;
+  z-index: 10;
 
-  inset: 0;
-
-  z-index: 5;
+  width: 100%;
+  height: 100%;
 
   pointer-events: none;
-
 }
-
 
 /* =========================================================
-   MARCA
+   HERO
 ========================================================= */
 
-.brand {
-
+.hero {
   position: absolute;
 
-  top: 42px;
-  left: 46px;
+  top: 34px;
+  left: 42px;
 
-  width: 390px;
-
-  pointer-events: none;
-
+  max-width: 420px;
 }
 
+.eyebrow {
+  margin-bottom: 18px;
 
-.brand-code {
-
-  margin-bottom: 16px;
-
-  font-family:
-    "DM Mono",
-    monospace;
+  font-family: "DM Mono", monospace;
 
   font-size: 10px;
+  font-weight: 500;
 
-  letter-spacing: .28em;
+  letter-spacing: 0.25em;
 
-  color:
-    rgba(255,255,255,.55);
-
+  color: rgba(255, 255, 255, 0.62);
 }
 
+.eyebrow span {
+  margin: 0 8px;
+
+  color: rgba(255, 255, 255, 0.25);
+}
 
 h1 {
-
   margin: 0;
 
-  font-size:
-    clamp(
-      46px,
-      6vw,
-      88px
-    );
+  font-family: "Inter", sans-serif;
 
-  line-height: .82;
+  font-size: clamp(62px, 6vw, 94px);
 
-  font-weight: 500;
+  line-height: 0.78;
 
-  letter-spacing:
-    -.065em;
+  font-weight: 300;
 
-  color:
-    #ffffff;
+  letter-spacing: -0.075em;
+
+  color: #fff;
 
   text-shadow:
-    0 4px 30px rgba(0,0,0,.65);
-
+    0 0 20px rgba(255, 255, 255, 0.025);
 }
-
 
 .subtitle {
-
-  width: 310px;
-
-  margin-top: 22px;
-
-  color:
-    var(--muted);
+  margin-top: 28px;
 
   font-size: 12px;
 
-  line-height: 1.7;
+  line-height: 1.8;
 
+  font-weight: 400;
+
+  color: rgba(255, 255, 255, 0.58);
 }
-
 
 /* =========================================================
-   PAINEL
+   BOTTOM
 ========================================================= */
 
-.info-panel {
-
+.bottom-left {
   position: absolute;
 
-  top: 50%;
-
-  right: 46px;
-
-  width: 330px;
-
-  transform:
-    translateY(-50%)
-    translateX(30px);
-
-  opacity: 0;
-
-  visibility: hidden;
-
-  padding: 0;
-
-  border:
-    1px solid var(--line);
-
-  background:
-    rgba(4,4,7,.82);
-
-  backdrop-filter:
-    blur(18px);
-
-  -webkit-backdrop-filter:
-    blur(18px);
-
-  transition:
-
-    opacity .45s ease,
-
-    transform .45s ease,
-
-    visibility .45s ease;
-
-  pointer-events: none;
-
-}
-
-
-.info-panel.visible {
-
-  opacity: 1;
-
-  visibility: visible;
-
-  transform:
-    translateY(-50%)
-    translateX(0);
-
-  pointer-events: auto;
-
-}
-
-
-.panel-header {
+  left: 42px;
+  bottom: 64px;
 
   display: flex;
 
   align-items: center;
 
-  justify-content: space-between;
-
-  padding:
-    18px 20px;
-
-  border-bottom:
-    1px solid var(--line);
-
-  font-family:
-    "DM Mono",
-    monospace;
-
-  font-size: 9px;
-
-  letter-spacing: .2em;
-
-  color:
-    var(--muted);
-
+  gap: 22px;
 }
-
-
-#closePanel {
-
-  width: 26px;
-  height: 26px;
-
-  border: 0;
-
-  background: transparent;
-
-  color:
-    var(--muted);
-
-  font-size: 20px;
-
-  cursor: pointer;
-
-}
-
-
-#closePanel:hover {
-
-  color:
-    white;
-
-}
-
-
-.panel-content {
-
-  padding:
-    22px 20px 24px;
-
-}
-
-
-.data-item {
-
-  display: flex;
-
-  flex-direction: column;
-
-  gap: 6px;
-
-  padding:
-    13px 0;
-
-  border-bottom:
-    1px solid rgba(255,255,255,.07);
-
-}
-
-
-.data-label {
-
-  font-family:
-    "DM Mono",
-    monospace;
-
-  font-size: 8px;
-
-  letter-spacing: .18em;
-
-  color:
-    rgba(255,255,255,.4);
-
-}
-
-
-.data-item strong {
-
-  font-size: 12px;
-
-  font-weight: 500;
-
-  letter-spacing: .02em;
-
-}
-
-
-.data-item strong.active {
-
-  color:
-    var(--accent-light);
-
-}
-
-
-.description {
-
-  margin-top: 18px;
-
-}
-
-
-.description p {
-
-  margin:
-    0 0 14px;
-
-  color:
-    rgba(255,255,255,.56);
-
-  font-size: 11px;
-
-  line-height: 1.75;
-
-}
-
 
 /* =========================================================
-   CONTROLES
-========================================================= */
-
-.controls {
-
-  position: absolute;
-
-  left: 46px;
-
-  bottom: 46px;
-
-  display: flex;
-
-  align-items: center;
-
-  gap: 24px;
-
-}
-
-
-/* =========================================================
-   BOTÃO EXPLORAR
+   BOTÃO
 ========================================================= */
 
 .explore-button {
-
   pointer-events: auto;
+
+  position: relative;
 
   display: flex;
 
   align-items: center;
+  justify-content: space-between;
 
-  gap: 16px;
+  width: 128px;
+  height: 44px;
 
-  min-width: 138px;
+  padding: 0 14px;
 
-  padding:
-    12px 15px;
+  background: rgba(0, 0, 0, 0.25);
 
-  border:
-    1px solid rgba(255,255,255,.22);
+  border: 1px solid rgba(255, 255, 255, 0.27);
 
-  background:
-    rgba(0,0,0,.18);
-
-  color:
-    white;
-
-  font-family:
-    "DM Mono",
-    monospace;
-
-  font-size: 9px;
-
-  letter-spacing: .16em;
+  color: #fff;
 
   cursor: pointer;
 
   transition:
-
-    background .25s ease,
-
-    border-color .25s ease,
-
-    transform .25s ease;
-
+    background 0.3s ease,
+    border-color 0.3s ease,
+    transform 0.3s ease;
 }
 
+.explore-button span:first-child {
+  font-family: "DM Mono", monospace;
+
+  font-size: 9px;
+
+  font-weight: 500;
+
+  letter-spacing: 0.15em;
+}
+
+.explore-button .arrow {
+  font-size: 16px;
+
+  transition: transform 0.3s ease;
+}
 
 .explore-button:hover {
+  background: rgba(255, 255, 255, 0.08);
 
-  background:
-    rgba(255,255,255,.1);
+  border-color: rgba(255, 255, 255, 0.55);
 
-  border-color:
-    rgba(255,255,255,.5);
-
-  transform:
-    translateY(-2px);
-
+  transform: translateY(-2px);
 }
-
-
-.arrow {
-
-  font-size: 15px;
-
-  transition:
-    transform .25s ease;
-
-}
-
 
 .explore-button:hover .arrow {
-
-  transform:
-    translate(3px,-3px);
-
+  transform: translate(3px, -3px);
 }
 
-
 /* =========================================================
-   INTERAÇÃO
+   INSTRUÇÕES
 ========================================================= */
 
-.interaction {
-
-  display: flex;
-
-  align-items: center;
-
-  gap: 9px;
-
-  color:
-    rgba(255,255,255,.43);
-
-  font-family:
-    "DM Mono",
-    monospace;
+.instructions {
+  font-family: "DM Mono", monospace;
 
   font-size: 8px;
 
-  letter-spacing: .09em;
+  letter-spacing: 0.12em;
 
+  color: rgba(255, 255, 255, 0.4);
+
+  white-space: nowrap;
 }
-
 
 .mouse-icon {
+  display: inline-block;
 
-  font-size: 15px;
+  margin-right: 7px;
 
-  color:
-    rgba(255,255,255,.6);
+  font-size: 7px;
 
+  color: rgba(255, 255, 255, 0.5);
 }
-
 
 .separator {
+  margin: 0 8px;
 
-  opacity: .25;
-
+  color: rgba(255, 255, 255, 0.18);
 }
-
 
 /* =========================================================
    FOOTER
 ========================================================= */
 
 .footer {
-
   position: absolute;
 
-  right: 46px;
-
-  bottom: 46px;
+  right: 42px;
+  bottom: 38px;
 
   display: flex;
 
-  gap: 22px;
+  align-items: center;
 
-  font-family:
-    "DM Mono",
-    monospace;
+  gap: 18px;
+
+  font-family: "DM Mono", monospace;
 
   font-size: 8px;
 
-  letter-spacing: .14em;
+  letter-spacing: 0.14em;
 
-  color:
-    rgba(255,255,255,.3);
-
+  color: rgba(255, 255, 255, 0.28);
 }
 
-
 /* =========================================================
-   LOADING
+   LOADER
 ========================================================= */
 
-#loading {
-
+.loader {
   position: fixed;
 
   inset: 0;
 
   z-index: 100;
 
-  display: grid;
-
-  place-items: center;
-
-  background:
-    #020204;
-
-  transition:
-    opacity .8s ease;
-
-}
-
-
-.loading-content {
-
   display: flex;
 
+  flex-direction: column;
+
   align-items: center;
+  justify-content: center;
 
-  gap: 15px;
+  background: #000;
 
+  transition:
+    opacity 1s ease,
+    visibility 1s ease;
 }
 
+.loader.hidden {
+  opacity: 0;
 
-.loading-label,
-.loading-number {
+  visibility: hidden;
 
-  font-family:
-    "DM Mono",
-    monospace;
+  pointer-events: none;
+}
+
+.loader-text {
+  margin-bottom: 16px;
+
+  font-family: "DM Mono", monospace;
 
   font-size: 9px;
 
-  letter-spacing: .2em;
+  letter-spacing: 0.3em;
 
-  color:
-    rgba(255,255,255,.55);
-
+  color: rgba(255, 255, 255, 0.55);
 }
 
-
-.loading-line {
-
-  width: 100px;
+.loader-line {
+  width: 150px;
 
   height: 1px;
 
-  background:
-    rgba(255,255,255,.2);
-
   overflow: hidden;
 
+  background: rgba(255, 255, 255, 0.1);
 }
 
-
-.loading-line::after {
-
-  content: "";
-
+.loader-line span {
   display: block;
 
-  width: 35%;
-
+  width: 100%;
   height: 100%;
 
-  background:
-    var(--accent);
+  background: #fff;
 
-  animation:
-    loading 1.2s ease-in-out infinite;
+  transform: translateX(-100%);
 
+  animation: loading 1.4s ease forwards;
 }
-
 
 @keyframes loading {
-
-  0% {
-
-    transform:
-      translateX(-120px);
-
+  to {
+    transform: translateX(0);
   }
-
-  100% {
-
-    transform:
-      translateX(120px);
-
-  }
-
 }
-
 
 /* =========================================================
    RESPONSIVO
@@ -683,125 +425,75 @@ h1 {
 
 @media (max-width: 800px) {
 
-  .brand {
-
-    top: 25px;
-
-    left: 25px;
-
-    width: 280px;
-
+  .hero {
+    top: 28px;
+    left: 24px;
   }
-
 
   h1 {
-
-    font-size: 48px;
-
+    font-size: clamp(54px, 15vw, 78px);
   }
-
 
   .subtitle {
+    margin-top: 22px;
 
-    width: 250px;
-
-    margin-top: 15px;
-
-    font-size: 10px;
-
+    font-size: 11px;
   }
 
+  .desktop-break {
+    display: none;
+  }
 
-  .controls {
-
-    left: 25px;
-
-    right: 25px;
-
-    bottom: 25px;
+  .bottom-left {
+    left: 24px;
+    bottom: 34px;
 
     flex-direction: column;
 
     align-items: flex-start;
 
     gap: 14px;
-
   }
 
-
-  .interaction {
-
+  .instructions {
     font-size: 7px;
-
   }
-
 
   .footer {
+    right: 24px;
+    bottom: 24px;
 
-    right: 25px;
-
-    bottom: 28px;
-
-    display: none;
-
+    font-size: 7px;
   }
-
-
-  .info-panel {
-
-    left: 25px;
-
-    right: 25px;
-
-    top: 50%;
-
-    width: auto;
-
-  }
-
 }
 
+@media (max-width: 520px) {
 
-@media (max-width: 500px) {
-
-  .brand {
-
-    top: 22px;
-
+  .hero {
+    top: 24px;
     left: 20px;
-
   }
 
+  .eyebrow {
+    font-size: 8px;
+
+    margin-bottom: 14px;
+  }
 
   h1 {
-
-    font-size: 40px;
-
+    font-size: 58px;
   }
-
 
   .subtitle {
-
-    font-size: 9px;
-
-    width: 220px;
-
+    max-width: 260px;
   }
 
-
-  .interaction {
-
-    flex-wrap: wrap;
-
-    max-width: 300px;
-
+  .bottom-left {
+    left: 20px;
+    bottom: 28px;
   }
 
-
-  .separator {
-
+  .footer {
     display: none;
-
   }
-
 }
