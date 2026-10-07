@@ -1,146 +1,807 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400&family=Manrope:wght@300;400;600;700&display=swap');
+@import url(
+  'https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@300;400;500;600;700&display=swap'
+);
+
+
+/* =========================================================
+   VARIÁVEIS
+========================================================= */
 
 :root {
-  font-family: Manrope, sans-serif;
-  color: #fff;
-  background: #020204;
+
+  --background:
+    #020204;
+
+  --white:
+    #f5f5f2;
+
+  --muted:
+    rgba(245, 245, 242, .58);
+
+  --subtle:
+    rgba(245, 245, 242, .35);
+
+  --line:
+    rgba(255, 255, 255, .12);
+
+  --accent:
+    #d89542;
+
+  --accent-light:
+    #f4c77b;
+
 }
 
+
+/* =========================================================
+   RESET
+========================================================= */
+
 * {
+
   box-sizing: border-box;
+
 }
+
 
 html,
 body,
 #app {
+
   width: 100%;
   height: 100%;
+
   margin: 0;
+
   overflow: hidden;
+
 }
+
 
 body {
-  background: #020204;
+
+  background:
+    var(--background);
+
+  color:
+    var(--white);
+
+  font-family:
+    Manrope,
+    sans-serif;
+
 }
+
+
+/* =========================================================
+   CANVAS
+========================================================= */
 
 canvas {
-  display: block;
+
+  position: fixed;
+
+  inset: 0;
+
   width: 100%;
   height: 100%;
+
+  display: block;
+
   cursor: grab;
+
 }
+
 
 canvas:active {
+
   cursor: grabbing;
+
 }
 
-.hud {
+
+/* =========================================================
+   INTERFACE
+========================================================= */
+
+.interface {
+
   position: fixed;
+
   inset: 0;
-  z-index: 2;
+
+  z-index: 5;
 
   pointer-events: none;
 
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-
-  padding: 38px 42px;
 }
+
+
+/* =========================================================
+   MARCA
+========================================================= */
 
 .brand {
-  max-width: 390px;
 
-  text-shadow:
-    0 2px 24px #000;
+  position: absolute;
+
+  top: 42px;
+  left: 46px;
+
+  width: 390px;
+
+  pointer-events: none;
+
 }
 
-.eyebrow {
-  font-family: "DM Mono", monospace;
-  font-size: 12px;
+
+.brand-code {
+
+  margin-bottom: 16px;
+
+  font-family:
+    "DM Mono",
+    monospace;
+
+  font-size: 10px;
+
   letter-spacing: .28em;
-  opacity: .62;
+
+  color:
+    rgba(255,255,255,.55);
+
 }
+
 
 h1 {
-  margin: 10px 0 8px;
 
-  font-size: clamp(32px, 5vw, 72px);
-  line-height: .9;
-
-  letter-spacing: -.055em;
-  font-weight: 600;
-}
-
-p {
   margin: 0;
 
-  color: rgba(255,255,255,.65);
+  font-size:
+    clamp(
+      46px,
+      6vw,
+      88px
+    );
 
-  font-size: 13px;
-  line-height: 1.6;
-}
+  line-height: .82;
 
-.hint {
-  align-self: flex-end;
+  font-weight: 500;
 
-  font-family: "DM Mono", monospace;
-  font-size: 11px;
+  letter-spacing:
+    -.065em;
 
-  letter-spacing: .08em;
-
-  color: rgba(255,255,255,.55);
+  color:
+    #ffffff;
 
   text-shadow:
-    0 2px 14px #000;
+    0 4px 30px rgba(0,0,0,.65);
+
 }
 
-#loading {
-  position: fixed;
-  inset: 0;
-  z-index: 10;
 
-  display: grid;
-  place-items: center;
+.subtitle {
 
-  background: #020204;
+  width: 310px;
 
-  color: #fff;
+  margin-top: 22px;
 
-  font-family: "DM Mono", monospace;
+  color:
+    var(--muted);
+
   font-size: 12px;
+
+  line-height: 1.7;
+
+}
+
+
+/* =========================================================
+   PAINEL
+========================================================= */
+
+.info-panel {
+
+  position: absolute;
+
+  top: 50%;
+
+  right: 46px;
+
+  width: 330px;
+
+  transform:
+    translateY(-50%)
+    translateX(30px);
+
+  opacity: 0;
+
+  visibility: hidden;
+
+  padding: 0;
+
+  border:
+    1px solid var(--line);
+
+  background:
+    rgba(4,4,7,.82);
+
+  backdrop-filter:
+    blur(18px);
+
+  -webkit-backdrop-filter:
+    blur(18px);
+
+  transition:
+
+    opacity .45s ease,
+
+    transform .45s ease,
+
+    visibility .45s ease;
+
+  pointer-events: none;
+
+}
+
+
+.info-panel.visible {
+
+  opacity: 1;
+
+  visibility: visible;
+
+  transform:
+    translateY(-50%)
+    translateX(0);
+
+  pointer-events: auto;
+
+}
+
+
+.panel-header {
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  padding:
+    18px 20px;
+
+  border-bottom:
+    1px solid var(--line);
+
+  font-family:
+    "DM Mono",
+    monospace;
+
+  font-size: 9px;
+
+  letter-spacing: .2em;
+
+  color:
+    var(--muted);
+
+}
+
+
+#closePanel {
+
+  width: 26px;
+  height: 26px;
+
+  border: 0;
+
+  background: transparent;
+
+  color:
+    var(--muted);
+
+  font-size: 20px;
+
+  cursor: pointer;
+
+}
+
+
+#closePanel:hover {
+
+  color:
+    white;
+
+}
+
+
+.panel-content {
+
+  padding:
+    22px 20px 24px;
+
+}
+
+
+.data-item {
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 6px;
+
+  padding:
+    13px 0;
+
+  border-bottom:
+    1px solid rgba(255,255,255,.07);
+
+}
+
+
+.data-label {
+
+  font-family:
+    "DM Mono",
+    monospace;
+
+  font-size: 8px;
+
+  letter-spacing: .18em;
+
+  color:
+    rgba(255,255,255,.4);
+
+}
+
+
+.data-item strong {
+
+  font-size: 12px;
+
+  font-weight: 500;
+
+  letter-spacing: .02em;
+
+}
+
+
+.data-item strong.active {
+
+  color:
+    var(--accent-light);
+
+}
+
+
+.description {
+
+  margin-top: 18px;
+
+}
+
+
+.description p {
+
+  margin:
+    0 0 14px;
+
+  color:
+    rgba(255,255,255,.56);
+
+  font-size: 11px;
+
+  line-height: 1.75;
+
+}
+
+
+/* =========================================================
+   CONTROLES
+========================================================= */
+
+.controls {
+
+  position: absolute;
+
+  left: 46px;
+
+  bottom: 46px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 24px;
+
+}
+
+
+/* =========================================================
+   BOTÃO EXPLORAR
+========================================================= */
+
+.explore-button {
+
+  pointer-events: auto;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 16px;
+
+  min-width: 138px;
+
+  padding:
+    12px 15px;
+
+  border:
+    1px solid rgba(255,255,255,.22);
+
+  background:
+    rgba(0,0,0,.18);
+
+  color:
+    white;
+
+  font-family:
+    "DM Mono",
+    monospace;
+
+  font-size: 9px;
+
+  letter-spacing: .16em;
+
+  cursor: pointer;
+
+  transition:
+
+    background .25s ease,
+
+    border-color .25s ease,
+
+    transform .25s ease;
+
+}
+
+
+.explore-button:hover {
+
+  background:
+    rgba(255,255,255,.1);
+
+  border-color:
+    rgba(255,255,255,.5);
+
+  transform:
+    translateY(-2px);
+
+}
+
+
+.arrow {
+
+  font-size: 15px;
+
+  transition:
+    transform .25s ease;
+
+}
+
+
+.explore-button:hover .arrow {
+
+  transform:
+    translate(3px,-3px);
+
+}
+
+
+/* =========================================================
+   INTERAÇÃO
+========================================================= */
+
+.interaction {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  color:
+    rgba(255,255,255,.43);
+
+  font-family:
+    "DM Mono",
+    monospace;
+
+  font-size: 8px;
+
+  letter-spacing: .09em;
+
+}
+
+
+.mouse-icon {
+
+  font-size: 15px;
+
+  color:
+    rgba(255,255,255,.6);
+
+}
+
+
+.separator {
+
+  opacity: .25;
+
+}
+
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.footer {
+
+  position: absolute;
+
+  right: 46px;
+
+  bottom: 46px;
+
+  display: flex;
+
+  gap: 22px;
+
+  font-family:
+    "DM Mono",
+    monospace;
+
+  font-size: 8px;
 
   letter-spacing: .14em;
 
+  color:
+    rgba(255,255,255,.3);
+
+}
+
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+#loading {
+
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 100;
+
+  display: grid;
+
+  place-items: center;
+
+  background:
+    #020204;
+
   transition:
-    opacity .7s ease;
+    opacity .8s ease;
+
 }
 
-#loading span {
-  animation: blink 1s infinite;
+
+.loading-content {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 15px;
+
 }
 
-@keyframes blink {
 
-  50% {
-    opacity: .2;
+.loading-label,
+.loading-number {
+
+  font-family:
+    "DM Mono",
+    monospace;
+
+  font-size: 9px;
+
+  letter-spacing: .2em;
+
+  color:
+    rgba(255,255,255,.55);
+
+}
+
+
+.loading-line {
+
+  width: 100px;
+
+  height: 1px;
+
+  background:
+    rgba(255,255,255,.2);
+
+  overflow: hidden;
+
+}
+
+
+.loading-line::after {
+
+  content: "";
+
+  display: block;
+
+  width: 35%;
+
+  height: 100%;
+
+  background:
+    var(--accent);
+
+  animation:
+    loading 1.2s ease-in-out infinite;
+
+}
+
+
+@keyframes loading {
+
+  0% {
+
+    transform:
+      translateX(-120px);
+
+  }
+
+  100% {
+
+    transform:
+      translateX(120px);
+
   }
 
 }
 
-@media (max-width: 600px) {
 
-  .hud {
-    padding: 22px;
+/* =========================================================
+   RESPONSIVO
+========================================================= */
+
+@media (max-width: 800px) {
+
+  .brand {
+
+    top: 25px;
+
+    left: 25px;
+
+    width: 280px;
+
   }
 
-  .hint {
+
+  h1 {
+
+    font-size: 48px;
+
+  }
+
+
+  .subtitle {
+
+    width: 250px;
+
+    margin-top: 15px;
+
+    font-size: 10px;
+
+  }
+
+
+  .controls {
+
+    left: 25px;
+
+    right: 25px;
+
+    bottom: 25px;
+
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    gap: 14px;
+
+  }
+
+
+  .interaction {
+
+    font-size: 7px;
+
+  }
+
+
+  .footer {
+
+    right: 25px;
+
+    bottom: 28px;
+
+    display: none;
+
+  }
+
+
+  .info-panel {
+
+    left: 25px;
+
+    right: 25px;
+
+    top: 50%;
+
+    width: auto;
+
+  }
+
+}
+
+
+@media (max-width: 500px) {
+
+  .brand {
+
+    top: 22px;
+
+    left: 20px;
+
+  }
+
+
+  h1 {
+
+    font-size: 40px;
+
+  }
+
+
+  .subtitle {
+
     font-size: 9px;
+
+    width: 220px;
+
   }
 
-  p {
-    max-width: 280px;
-    font-size: 11px;
+
+  .interaction {
+
+    flex-wrap: wrap;
+
+    max-width: 300px;
+
+  }
+
+
+  .separator {
+
+    display: none;
+
   }
 
 }
