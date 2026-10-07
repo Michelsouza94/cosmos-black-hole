@@ -36,6 +36,8 @@ renderer.setSize(
 
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
+scene.background = new THREE.Color(0x000000);
+
 /* =========================================================
    GRUPO PRINCIPAL
 ========================================================= */
@@ -45,24 +47,16 @@ const universe = new THREE.Group();
 scene.add(universe);
 
 /* =========================================================
-   FUNDO
-========================================================= */
-
-scene.background = new THREE.Color(0x000000);
-
-/* =========================================================
    ESTRELAS
 ========================================================= */
 
 const starCount = 1800;
 
-const starPositions = new Float32Array(
-  starCount * 3
-);
+const starPositions =
+  new Float32Array(starCount * 3);
 
-const starSizes = new Float32Array(
-  starCount
-);
+const starSizes =
+  new Float32Array(starCount);
 
 for (let i = 0; i < starCount; i++) {
 
@@ -190,6 +184,16 @@ universe.add(stars);
    SHADER DO BURACO NEGRO
 ========================================================= */
 
+/*
+  IMPORTANTE:
+
+  Este shader NÃO possui mais uExplore.
+
+  O modo EXPLORAR não altera a estrutura do buraco negro.
+  Isso evita que apareça uma faixa durante a transição
+  EXPLORAR -> VOLTAR.
+*/
+
 const blackHoleGeometry =
   new THREE.PlaneGeometry(
     2,
@@ -207,20 +211,6 @@ const blackHoleMaterial =
 
       uMouse: {
         value: new THREE.Vector2(0, 0)
-      },
-
-      uZoom: {
-        value: 1
-      },
-
-      /*
-        Importante:
-        uExplore agora controla somente efeitos sutis
-        do movimento, não a região central do buraco negro.
-      */
-
-      uExplore: {
-        value: 0
       }
 
     },
@@ -248,9 +238,8 @@ const blackHoleMaterial =
       precision highp float;
 
       uniform float uTime;
+
       uniform vec2 uMouse;
-      uniform float uZoom;
-      uniform float uExplore;
 
       varying vec2 vUv;
 
@@ -303,13 +292,24 @@ const blackHoleMaterial =
 
           mix(
             hash(i),
-            hash(i + vec2(1.0, 0.0)),
+            hash(
+              i +
+              vec2(1.0, 0.0)
+            ),
             f.x
           ),
 
           mix(
-            hash(i + vec2(0.0, 1.0)),
-            hash(i + vec2(1.0, 1.0)),
+            hash(
+              i +
+              vec2(0.0, 1.0)
+            ),
+
+            hash(
+              i +
+              vec2(1.0, 1.0)
+            ),
+
             f.x
           ),
 
@@ -349,7 +349,7 @@ const blackHoleMaterial =
       }
 
       /* =====================================================
-         PALETA DE CORES
+         PALETA
       ===================================================== */
 
       vec3 palette(
@@ -446,7 +446,7 @@ const blackHoleMaterial =
       void main() {
 
         /*
-          Coordenadas normalizadas.
+          Coordenadas da tela.
         */
 
         vec2 uv =
@@ -454,7 +454,7 @@ const blackHoleMaterial =
           1.0;
 
         /*
-          Corrige proporção da tela.
+          Proporção da tela.
         */
 
         uv.x *= 1.777;
@@ -470,28 +470,22 @@ const blackHoleMaterial =
         uv += mouse;
 
         /*
-          Tempo.
-
-          A exploração aumenta apenas levemente a velocidade.
-          Não alteramos a estrutura do horizonte.
+          Tempo da animação.
         */
 
         float time =
           uTime *
-          (
-            0.075 +
-            uExplore * 0.09
-          );
+          0.075;
 
         /* ===================================================
-           DISTÂNCIA AO CENTRO
+           DISTÂNCIA
         =================================================== */
 
         float radius =
           length(uv);
 
         /*
-          Evita divisão por zero no centro.
+          Evita divisão por zero.
         */
 
         float safeRadius =
@@ -502,9 +496,6 @@ const blackHoleMaterial =
 
         /*
           Direção segura.
-
-          Isso elimina uma possível instabilidade do
-          normalize() exatamente no centro.
         */
 
         vec2 direction =
@@ -521,15 +512,6 @@ const blackHoleMaterial =
             radius,
             0.16
           );
-
-        /*
-          A exploração aumenta muito pouco a distorção,
-          evitando mudanças bruscas no centro.
-        */
-
-        gravitationalPull *=
-          1.0 +
-          uExplore * 0.08;
 
         vec2 warped =
           uv;
@@ -555,33 +537,17 @@ const blackHoleMaterial =
         float diskRadius =
           warpedRadius;
 
-        /*
-          Parte externa.
-        */
-
-        float outerDisk =
-          smoothstep(
-            1.08,
-            0.68,
-            diskRadius
-          );
-
-        /*
-          Parte interna.
-
-          O disco nunca invade diretamente o horizonte.
-        */
-
-        float innerDisk =
-          smoothstep(
-            0.24,
-            0.40,
-            diskRadius
-          );
-
         float diskMask =
-          outerDisk *
-          innerDisk;
+          smoothstep(
+            1.02,
+            0.62,
+            diskRadius
+          ) *
+          smoothstep(
+            0.20,
+            0.38,
+            diskRadius
+          );
 
         /* ===================================================
            ESPIRAL
@@ -591,10 +557,7 @@ const blackHoleMaterial =
           warpedAngle +
           time +
           diskRadius *
-          (
-            8.0 +
-            uExplore * 1.5
-          );
+          8.0;
 
         vec2 spiralUv =
           vec2(
@@ -623,11 +586,9 @@ const blackHoleMaterial =
           0.5 *
           sin(
             spiral *
-            (
-              8.0 +
-              uExplore * 1.2
-            ) +
-            turbulence * 8.0
+            8.0 +
+            turbulence *
+            8.0
           );
 
         layers =
@@ -643,61 +604,31 @@ const blackHoleMaterial =
             layers * 0.45
           );
 
-        /*
-          Proteção radial.
-
-          O disco começa a desaparecer antes do horizonte,
-          portanto não existe iluminação atravessando o centro.
-        */
-
-        float diskCenterFade =
-          smoothstep(
-            0.34,
-            0.47,
-            diskRadius
-          );
-
-        disk *=
-          diskCenterFade;
-
         /* ===================================================
            ANEL PRINCIPAL
         =================================================== */
 
-        const float baseRingRadius =
-          0.38;
-
-        float ringDistance =
-          abs(
-            warpedRadius -
-            baseRingRadius
-          );
-
         float ring =
           1.0 -
           smoothstep(
-            0.075,
+            0.08,
             0.16,
-            ringDistance
+            abs(
+              warpedRadius -
+              0.38
+            )
           );
-
-        /*
-          Impede o anel de chegar ao centro.
-        */
 
         ring *=
           smoothstep(
-            0.28,
-            0.38,
+            0.0,
+            0.35,
             warpedRadius
           );
 
         /* ===================================================
            ANEL INTERNO
         =================================================== */
-
-        const float baseInnerRingRadius =
-          0.43;
 
         float innerRing =
           1.0 -
@@ -706,18 +637,18 @@ const blackHoleMaterial =
             0.085,
             abs(
               warpedRadius -
-              baseInnerRingRadius
+              0.43
             )
           );
 
         /*
-          O anel interno também é completamente radial.
+          Impede o brilho de atravessar o centro.
         */
 
         innerRing *=
           smoothstep(
-            0.32,
-            0.42,
+            0.31,
+            0.40,
             warpedRadius
           );
 
@@ -725,24 +656,11 @@ const blackHoleMaterial =
            HORIZONTE DE EVENTOS
         =================================================== */
 
-        /*
-          Mantemos um tamanho FIXO.
-
-          Isso é importante:
-          o horizonte não muda de posição durante a
-          transição EXPLORAR -> VOLTAR.
-
-          Assim não existe uma faixa temporária.
-        */
-
-        const float horizonRadius =
-          0.335;
-
         float eventHorizon =
           1.0 -
           smoothstep(
-            horizonRadius,
-            horizonRadius + 0.055,
+            0.31,
+            0.36,
             warpedRadius
           );
 
@@ -762,10 +680,7 @@ const blackHoleMaterial =
 
         diskColor *=
           diskMask *
-          (
-            2.0 +
-            uExplore * 0.15
-          );
+          2.0;
 
         vec3 ringColor =
           vec3(
@@ -774,10 +689,7 @@ const blackHoleMaterial =
             0.08
           ) *
           ring *
-          (
-            3.0 +
-            uExplore * 0.35
-          );
+          3.0;
 
         vec3 innerColor =
           vec3(
@@ -786,10 +698,7 @@ const blackHoleMaterial =
             0.25
           ) *
           innerRing *
-          (
-            2.5 +
-            uExplore * 0.25
-          );
+          2.5;
 
         vec3 color =
           diskColor +
@@ -797,7 +706,7 @@ const blackHoleMaterial =
           innerColor;
 
         /* ===================================================
-           GLOW EXTERNO
+           GLOW
         =================================================== */
 
         float glow =
@@ -809,17 +718,6 @@ const blackHoleMaterial =
             9.0
           );
 
-        /*
-          Glow somente fora do horizonte.
-        */
-
-        float glowMask =
-          smoothstep(
-            0.30,
-            0.48,
-            warpedRadius
-          );
-
         color +=
           vec3(
             0.65,
@@ -827,19 +725,11 @@ const blackHoleMaterial =
             0.01
           ) *
           glow *
-          glowMask *
-          (
-            0.25 +
-            uExplore * 0.08
-          );
+          0.25;
 
         /* ===================================================
-           BURACO NEGRO
+           HORIZONTE
         =================================================== */
-
-        /*
-          Primeiro escurecemos o horizonte.
-        */
 
         color =
           mix(
@@ -849,17 +739,17 @@ const blackHoleMaterial =
           );
 
         /*
-          Segunda proteção.
+          Proteção adicional do centro.
 
-          Tudo que estiver realmente no interior do horizonte
-          será preto, independentemente das outras contas.
+          Nenhuma informação do disco pode aparecer dentro
+          dessa região.
         */
 
-        float centralBlack =
+        float blackCore =
           1.0 -
           smoothstep(
             0.0,
-            horizonRadius + 0.012,
+            0.355,
             warpedRadius
           );
 
@@ -867,7 +757,7 @@ const blackHoleMaterial =
           mix(
             color,
             vec3(0.0),
-            centralBlack
+            blackCore
           );
 
         /* ===================================================
@@ -896,15 +786,17 @@ const blackHoleMaterial =
           );
 
         /*
-          Garante novamente que o centro seja absolutamente
-          preto depois da exposição.
+          Garantia final:
+
+          o centro continua absolutamente preto mesmo
+          depois da exposição.
         */
 
         color =
           mix(
             color,
             vec3(0.0),
-            centralBlack
+            blackCore
           );
 
         gl_FragColor =
@@ -940,9 +832,6 @@ let currentRotationY = 0;
 
 let targetZoom = 1;
 let currentZoom = 1;
-
-let targetExplore = 0;
-let currentExplore = 0;
 
 let explored = false;
 
@@ -982,6 +871,20 @@ const explorePanel =
    MODO EXPLORAÇÃO
 ========================================================= */
 
+/*
+  IMPORTANTE:
+
+  O modo exploração NÃO altera mais o shader.
+
+  Ele altera apenas:
+
+  - zoom
+  - rotação
+  - posição das estrelas/cena
+  - painel
+  - botão
+*/
+
 function setExploreMode(
   active
 ) {
@@ -989,27 +892,24 @@ function setExploreMode(
   explored = active;
 
   /*
-    A variável do shader continua suave, mas agora ela
-    controla somente pequenos efeitos de movimento.
-  */
-
-  targetExplore =
-    active ? 1 : 0;
-
-  /*
-    Zoom continua sendo a principal diferença visual
-    do modo exploração.
+    Zoom cinematográfico.
   */
 
   targetZoom =
-    active ? 1.48 : 1;
+    active
+      ? 1.48
+      : 1;
 
   /*
-    Pequena inclinação.
+    Pequena inclinação da cena.
+
+    Não alteramos o plano individualmente.
   */
 
   targetRotationX =
-    active ? -0.04 : 0;
+    active
+      ? -0.04
+      : 0;
 
   targetRotationY =
     active
@@ -1272,10 +1172,14 @@ window.addEventListener(
       0.0007;
 
     const minimumZoom =
-      explored ? 1.15 : 0.75;
+      explored
+        ? 1.15
+        : 0.75;
 
     const maximumZoom =
-      explored ? 1.65 : 1.35;
+      explored
+        ? 1.65
+        : 1.35;
 
     targetZoom =
       THREE.MathUtils.clamp(
@@ -1318,7 +1222,7 @@ exploreButton.addEventListener(
 );
 
 /* =========================================================
-   ESC PARA VOLTAR
+   ESC
 ========================================================= */
 
 window.addEventListener(
@@ -1384,31 +1288,15 @@ function animate() {
   const elapsed =
     clock.getElapsedTime();
 
-  /*
-    Transição suave do modo exploração.
-
-    Agora isso não muda o tamanho do horizonte,
-    apenas pequenos detalhes de movimento.
-  */
-
-  currentExplore +=
-    (
-      targetExplore -
-      currentExplore
-    ) *
-    0.05;
+  /* =======================================================
+     TEMPO DO SHADER
+  ======================================================= */
 
   blackHoleMaterial.uniforms.uTime.value =
     elapsed;
 
-  blackHoleMaterial.uniforms.uZoom.value =
-    currentZoom;
-
-  blackHoleMaterial.uniforms.uExplore.value =
-    currentExplore;
-
   /* =======================================================
-     ROTAÇÃO
+     SUAVIZA ROTAÇÃO
   ======================================================= */
 
   currentRotationX +=
@@ -1426,7 +1314,7 @@ function animate() {
     0.045;
 
   /* =======================================================
-     ZOOM
+     SUAVIZA ZOOM
   ======================================================= */
 
   currentZoom +=
@@ -1437,7 +1325,7 @@ function animate() {
     0.045;
 
   /* =======================================================
-     MOVIMENTO DO UNIVERSO
+     MOVIMENTO DA CENA
   ======================================================= */
 
   universe.rotation.x =
@@ -1446,39 +1334,42 @@ function animate() {
   universe.rotation.y =
     currentRotationY;
 
-  /*
-    Pequeno movimento de profundidade.
-  */
-
-  universe.position.z =
-    Math.sin(
-      elapsed *
-      (
-        0.12 +
-        currentExplore * 0.10
-      )
-    ) *
-    0.015;
-
   universe.scale.set(
     currentZoom,
     currentZoom,
     currentZoom
   );
 
+  /*
+    Pequena sensação de profundidade.
+
+    Isso é aplicado ao grupo inteiro, mantendo o shader
+    completamente independente do modo exploração.
+  */
+
+  universe.position.z =
+    Math.sin(
+      elapsed *
+      0.12
+    ) *
+    0.015;
+
   /* =======================================================
-     MOVIMENTO AUTOMÁTICO
+     ROTAÇÃO AUTOMÁTICA
   ======================================================= */
 
   if (!dragging) {
 
     targetRotationY +=
-      (
-        0.00012 +
-        currentExplore * 0.00018
-      );
+      explored
+        ? 0.00025
+        : 0.00012;
 
   }
+
+  /* =======================================================
+     RENDER
+  ======================================================= */
 
   renderer.render(
     scene,
