@@ -1,50 +1,235 @@
 <!doctype html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>COSMOS — Black Hole</title>
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="theme-color"
+    content="#020204"
+  >
 
   <meta
     name="description"
-    content="Experiência WebGL interativa de um buraco negro."
+    content="Singularity — uma experiência visual interativa através do horizonte de eventos."
   >
+
+  <title>SINGULARITY — Event Horizon</title>
+
 </head>
+
 
 <body>
 
   <div id="app"></div>
 
-  <div class="hud">
 
-    <div class="brand">
+  <!-- =====================================================
+       INTERFACE PRINCIPAL
+  ====================================================== -->
 
-      <span class="eyebrow">
-        COSMOS / 01
-      </span>
+  <main class="interface">
+
+
+    <!-- MARCA -->
+
+    <header class="brand">
+
+      <div class="brand-code">
+        SINGULARITY / 01
+      </div>
 
       <h1>
-        BLACK HOLE
+        EVENT<br>
+        HORIZON
       </h1>
 
-      <p>
-        Uma viagem visual pelo horizonte de eventos.
+      <p class="subtitle">
+        Uma experiência visual através
+        dos limites do espaço e do tempo.
       </p>
 
+    </header>
+
+
+    <!-- PAINEL DE INFORMAÇÕES -->
+
+    <aside class="info-panel" id="infoPanel">
+
+      <div class="panel-header">
+
+        <span>
+          COSMIC DATA
+        </span>
+
+        <button
+          id="closePanel"
+          aria-label="Fechar informações"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <div class="panel-content">
+
+        <div class="data-item">
+
+          <span class="data-label">
+            OBJETO
+          </span>
+
+          <strong>
+            BLACK HOLE
+          </strong>
+
+        </div>
+
+
+        <div class="data-item">
+
+          <span class="data-label">
+            REGIÃO
+          </span>
+
+          <strong>
+            HORIZONTE DE EVENTOS
+          </strong>
+
+        </div>
+
+
+        <div class="data-item">
+
+          <span class="data-label">
+            ESTADO
+          </span>
+
+          <strong class="active">
+            OBSERVAÇÃO ATIVA
+          </strong>
+
+        </div>
+
+
+        <div class="description">
+
+          <p>
+            Um buraco negro é uma região do espaço
+            onde a gravidade é tão intensa que nem
+            mesmo a luz consegue escapar.
+          </p>
+
+          <p>
+            Ao redor dele, matéria extremamente
+            aquecida forma um disco de acreção,
+            produzindo o brilho observado nesta
+            experiência.
+          </p>
+
+        </div>
+
+      </div>
+
+    </aside>
+
+
+    <!-- CONTROLES -->
+
+    <div class="controls">
+
+      <button
+        id="exploreBtn"
+        class="explore-button"
+      >
+
+        <span>
+          EXPLORAR
+        </span>
+
+        <span class="arrow">
+          ↗
+        </span>
+
+      </button>
+
+
+      <div class="interaction">
+
+        <span class="mouse-icon">
+          ◌
+        </span>
+
+        <span>
+          ARRASTE PARA ORBITAR
+        </span>
+
+        <span class="separator">
+          /
+        </span>
+
+        <span>
+          SCROLL PARA APROXIMAR
+        </span>
+
+      </div>
+
     </div>
 
-    <div class="hint">
-      Arraste para orbitar · Role para aproximar
-    </div>
 
-  </div>
+    <!-- MARCADOR INFERIOR -->
+
+    <footer class="footer">
+
+      <span>
+        COSMOS RESEARCH
+      </span>
+
+      <span>
+        2026
+      </span>
+
+    </footer>
+
+
+  </main>
+
+
+  <!-- =====================================================
+       LOADING
+  ====================================================== -->
 
   <div id="loading">
-    INICIALIZANDO UNIVERSO<span>...</span>
+
+    <div class="loading-content">
+
+      <span class="loading-label">
+        INITIALIZING
+      </span>
+
+      <span class="loading-line"></span>
+
+      <span class="loading-number">
+        01
+      </span>
+
+    </div>
+
   </div>
 
-  <script type="module" src="/src/main.js"></script>
+
+  <script
+    type="module"
+    src="/src/main.js"
+  ></script>
 
 </body>
+
 </html>
