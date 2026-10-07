@@ -7,35 +7,56 @@ import "./style.css";
    CENA
 ========================================================= */
 
-const scene = new THREE.Scene();
+const scene =
+  new THREE.Scene();
 
-const camera = new THREE.Camera();
+
+const camera =
+  new THREE.Camera();
 
 
 /* =========================================================
    RENDERER
 ========================================================= */
 
-const renderer = new THREE.WebGLRenderer({
-  antialias: false,
-  powerPreference: "high-performance"
-});
+const renderer =
+  new THREE.WebGLRenderer({
+
+    antialias: false,
+
+    powerPreference:
+      "high-performance"
+
+  });
+
 
 renderer.setPixelRatio(
-  Math.min(window.devicePixelRatio, 1.8)
+
+  Math.min(
+    window.devicePixelRatio,
+    1.8
+  )
+
 );
 
+
 renderer.setSize(
+
   window.innerWidth,
   window.innerHeight
+
 );
+
 
 renderer.outputColorSpace =
   THREE.SRGBColorSpace;
 
+
 document
   .querySelector("#app")
-  .appendChild(renderer.domElement);
+  .appendChild(
+    renderer.domElement
+  );
 
 
 /* =========================================================
@@ -51,7 +72,11 @@ void main() {
   vUv = uv;
 
   gl_Position =
-    vec4(position.xy, 0.0, 1.0);
+    vec4(
+      position.xy,
+      0.0,
+      1.0
+    );
 
 }
 
@@ -217,9 +242,11 @@ void main() {
   ------------------------------------------------------- */
 
   vec2 uv =
+
     (
       gl_FragCoord.xy -
-      0.5 * uResolution.xy
+      0.5 *
+      uResolution.xy
     )
     /
     uResolution.y;
@@ -229,21 +256,31 @@ void main() {
      MOVIMENTO DO MOUSE
   ------------------------------------------------------- */
 
-  vec2 mouseOffset =
-    (
-      uMouse -
-      0.5
-    )
-    *
-    vec2(
-      0.55,
-      0.35
-    );
+  vec2 mouse =
+    uMouse -
+    0.5;
 
 
-  uv -=
-    mouseOffset *
-    0.12;
+  /* Movimento orbital */
+
+  float orbitX =
+    mouse.x *
+    0.11;
+
+
+  float orbitY =
+    mouse.y *
+    0.075;
+
+
+  uv.x +=
+    orbitX *
+    (0.8 + uv.y);
+
+
+  uv.y +=
+    orbitY *
+    (0.8 + uv.x);
 
 
   /* -------------------------------------------------------
@@ -255,11 +292,16 @@ void main() {
 
 
   /* -------------------------------------------------------
-     DISTÂNCIA E ÂNGULO
+     DISTÂNCIA
   ------------------------------------------------------- */
 
   float r =
     length(uv);
+
+
+  /* -------------------------------------------------------
+     ÂNGULO
+  ------------------------------------------------------- */
 
   float angle =
     atan(
@@ -273,22 +315,25 @@ void main() {
   ======================================================= */
 
   vec3 color =
+
     vec3(
+      0.0012,
       0.0015,
-      0.002,
-      0.005
+      0.003
     );
 
 
-  /* -------------------------------------------------------
+  /* =======================================================
      ESTRELAS
-  ------------------------------------------------------- */
+  ======================================================= */
 
   vec2 starGrid =
     uv * 18.0;
 
+
   vec2 starCell =
     floor(starGrid);
+
 
   vec2 starLocal =
     fract(starGrid) -
@@ -300,6 +345,7 @@ void main() {
 
 
   vec2 starOffset =
+
     vec2(
 
       hash21(
@@ -316,6 +362,7 @@ void main() {
 
 
   float starShape =
+
     smoothstep(
 
       0.055,
@@ -331,6 +378,7 @@ void main() {
 
 
   float star =
+
     step(
       0.993,
       starRandom
@@ -342,12 +390,15 @@ void main() {
   color +=
 
     star *
+
     vec3(
-      0.75,
-      0.88,
+      0.7,
+      0.85,
       1.0
     )
+
     *
+
     (
       0.72 +
       0.28 *
@@ -359,13 +410,15 @@ void main() {
 
 
   /* =======================================================
-     LENTE GRAVITACIONAL
+     GLOW GRAVITACIONAL
   ======================================================= */
 
   float gravitationalGlow =
 
     exp(
+
       -pow(
+
         abs(
           r - 0.205
         )
@@ -373,26 +426,30 @@ void main() {
         0.048,
 
         2.0
+
       )
+
     );
 
 
   color +=
 
     gravitationalGlow *
+
     vec3(
       1.0,
-      0.38,
-      0.08
+      0.34,
+      0.07
     )
+
     *
-    0.38;
+
+    0.34;
 
 
   /* =======================================================
      DISCO DE ACREÇÃO
   ======================================================= */
-
 
   float diskShape =
 
@@ -413,23 +470,9 @@ void main() {
     );
 
 
-  /* -------------------------------------------------------
-     ESPIRAL
-
-     IMPORTANTE:
-
-     Na versão anterior, o valor de atan() era usado
-     diretamente no ruído.
-
-     atan() possui uma mudança brusca entre -PI e PI.
-
-     Isso criava a faixa horizontal.
-
-     Agora transformamos o ângulo em coordenadas
-     circulares com COS e SIN.
-
-     Dessa maneira o padrão fica contínuo.
-  ------------------------------------------------------- */
+  /* =======================================================
+     ESPIRAL CONTÍNUA
+  ======================================================= */
 
   float spiralPhase =
 
@@ -451,7 +494,15 @@ void main() {
     0.23;
 
 
-  vec2 circularNoiseCoordinates =
+  /* -------------------------------------------------------
+     COORDENADAS CIRCULARES
+
+     Não utilizamos o ângulo diretamente no ruído.
+
+     Isso evita a descontinuidade em -PI / PI.
+  ------------------------------------------------------- */
+
+  vec2 circularCoordinates =
 
     vec2(
 
@@ -463,14 +514,14 @@ void main() {
         spiralPhase
       )
 
-    )
+    );
 
-    *
 
+  circularCoordinates *=
     5.5;
 
 
-  circularNoiseCoordinates +=
+  circularCoordinates +=
 
     vec2(
 
@@ -481,7 +532,7 @@ void main() {
     );
 
 
-  circularNoiseCoordinates +=
+  circularCoordinates +=
 
     vec2(
 
@@ -492,32 +543,34 @@ void main() {
     );
 
 
-  /* -------------------------------------------------------
+  /* =======================================================
      TURBULÊNCIA
-  ------------------------------------------------------- */
+  ======================================================= */
 
   float turbulence =
 
     fbm(
-      circularNoiseCoordinates
+      circularCoordinates
     );
 
 
   float filaments =
 
     pow(
+
       max(
         turbulence - 0.22,
         0.0
       ),
 
       1.45
+
     );
 
 
-  /* -------------------------------------------------------
+  /* =======================================================
      REGIÕES QUENTES
-  ------------------------------------------------------- */
+  ======================================================= */
 
   float hotZone =
 
@@ -557,9 +610,9 @@ void main() {
     );
 
 
-  /* -------------------------------------------------------
+  /* =======================================================
      COR DO DISCO
-  ------------------------------------------------------- */
+  ======================================================= */
 
   vec3 diskColor =
 
@@ -567,14 +620,14 @@ void main() {
 
       vec3(
         0.95,
-        0.035,
-        0.004
+        0.025,
+        0.002
       ),
 
       vec3(
         1.0,
-        0.72,
-        0.18
+        0.70,
+        0.16
       ),
 
       hotZone
@@ -591,7 +644,7 @@ void main() {
       vec3(
         1.0,
         0.96,
-        0.72
+        0.74
       ),
 
       innerHotZone
@@ -599,9 +652,9 @@ void main() {
     );
 
 
-  /* -------------------------------------------------------
-     APLICA DISCO
-  ------------------------------------------------------- */
+  /* =======================================================
+     DISCO PRINCIPAL
+  ======================================================= */
 
   color +=
 
@@ -619,7 +672,7 @@ void main() {
 
 
   /* =======================================================
-     PARTE EXTERNA DO DISCO
+     DISCO EXTERNO
   ======================================================= */
 
   float outerDisk =
@@ -649,11 +702,8 @@ void main() {
     );
 
 
-  /* -------------------------------------------------------
-     RUÍDO EXTERNO CIRCULAR
-  ------------------------------------------------------- */
-
   float outerAngle =
+
     angle -
     uTime * 0.16;
 
@@ -670,22 +720,26 @@ void main() {
         outerAngle
       )
 
-    )
+    );
 
-    *
 
+  outerCoordinates *=
     4.0;
 
 
   outerCoordinates +=
 
     vec2(
+
       r * 12.0,
+
       uTime * 0.015
+
     );
 
 
   float outerNoise =
+
     fbm(
       outerCoordinates
     );
@@ -727,6 +781,7 @@ void main() {
 
 
   color *=
+
     1.0 -
     horizon;
 
@@ -769,9 +824,9 @@ void main() {
     1.25;
 
 
-  /* -------------------------------------------------------
-     BRILHO SECUNDÁRIO
-  ------------------------------------------------------- */
+  /* =======================================================
+     ANEL SECUNDÁRIO
+  ======================================================= */
 
   float secondaryRing =
 
@@ -853,6 +908,7 @@ void main() {
     );
 
 }
+
 `;
 
 
@@ -861,6 +917,7 @@ void main() {
 ========================================================= */
 
 const material =
+
   new THREE.ShaderMaterial({
 
     vertexShader,
@@ -873,17 +930,21 @@ const material =
 
         value:
           new THREE.Vector2(
+
             window.innerWidth,
             window.innerHeight
+
           )
 
       },
+
 
       uTime: {
 
         value: 0
 
       },
+
 
       uMouse: {
 
@@ -894,6 +955,7 @@ const material =
           )
 
       },
+
 
       uZoom: {
 
@@ -911,6 +973,7 @@ const material =
 ========================================================= */
 
 const quad =
+
   new THREE.Mesh(
 
     new THREE.PlaneGeometry(
@@ -932,37 +995,51 @@ scene.add(
    INTERAÇÃO
 ========================================================= */
 
-let targetZoom = 1.0;
-
-let zoom = 1.0;
-
-
 const targetMouse =
+
   new THREE.Vector2(
     0.5,
     0.5
   );
 
 
-let dragging = false;
-
-let lastX = 0;
-
-let lastY = 0;
+let targetZoom =
+  1.0;
 
 
-/* ---------------------------------------------------------
-   MOUSE DOWN
---------------------------------------------------------- */
+let zoom =
+  1.0;
+
+
+let dragging =
+  false;
+
+
+let lastX =
+  0;
+
+
+let lastY =
+  0;
+
+
+/* =========================================================
+   MOUSE
+========================================================= */
 
 renderer.domElement.addEventListener(
+
   "pointerdown",
+
   (event) => {
 
-    dragging = true;
+    dragging =
+      true;
+
 
     lastX =
       event.clientX;
+
 
     lastY =
       event.clientY;
@@ -974,15 +1051,14 @@ renderer.domElement.addEventListener(
       );
 
   }
+
 );
 
 
-/* ---------------------------------------------------------
-   MOUSE MOVE
---------------------------------------------------------- */
-
 renderer.domElement.addEventListener(
+
   "pointermove",
+
   (event) => {
 
     targetMouse.set(
@@ -991,54 +1067,101 @@ renderer.domElement.addEventListener(
         window.innerWidth,
 
       1.0 -
-        event.clientY /
+
+      event.clientY /
         window.innerHeight
 
     );
 
 
     if (!dragging) {
+
       return;
+
     }
+
+
+    const dx =
+      event.clientX -
+      lastX;
+
+
+    const dy =
+      event.clientY -
+      lastY;
 
 
     lastX =
       event.clientX;
 
+
     lastY =
       event.clientY;
 
+
+    targetMouse.x +=
+      dx /
+      window.innerWidth *
+      0.22;
+
+
+    targetMouse.y +=
+      dy /
+      window.innerHeight *
+      0.22;
+
+
+    targetMouse.x =
+      THREE.MathUtils.clamp(
+        targetMouse.x,
+        0.0,
+        1.0
+      );
+
+
+    targetMouse.y =
+      THREE.MathUtils.clamp(
+        targetMouse.y,
+        0.0,
+        1.0
+      );
+
   }
+
 );
 
 
-/* ---------------------------------------------------------
-   MOUSE UP
---------------------------------------------------------- */
-
 renderer.domElement.addEventListener(
+
   "pointerup",
+
   () => {
 
-    dragging = false;
+    dragging =
+      false;
 
   }
+
 );
 
 
 renderer.domElement.addEventListener(
+
   "pointercancel",
+
   () => {
 
-    dragging = false;
+    dragging =
+      false;
 
   }
+
 );
 
 
-/* ---------------------------------------------------------
+/* =========================================================
    ZOOM
---------------------------------------------------------- */
+========================================================= */
 
 renderer.domElement.addEventListener(
 
@@ -1080,7 +1203,9 @@ renderer.domElement.addEventListener(
 ========================================================= */
 
 window.addEventListener(
+
   "resize",
+
   () => {
 
     renderer.setSize(
@@ -1103,6 +1228,84 @@ window.addEventListener(
       );
 
   }
+
+);
+
+
+/* =========================================================
+   BOTÃO EXPLORAR
+========================================================= */
+
+const exploreButton =
+  document.querySelector(
+    "#exploreBtn"
+  );
+
+
+const infoPanel =
+  document.querySelector(
+    "#infoPanel"
+  );
+
+
+const closePanel =
+  document.querySelector(
+    "#closePanel"
+  );
+
+
+exploreButton.addEventListener(
+
+  "click",
+
+  () => {
+
+    infoPanel.classList.add(
+      "visible"
+    );
+
+  }
+
+);
+
+
+closePanel.addEventListener(
+
+  "click",
+
+  () => {
+
+    infoPanel.classList.remove(
+      "visible"
+    );
+
+  }
+
+);
+
+
+/* =========================================================
+   ESC FECHA O PAINEL
+========================================================= */
+
+window.addEventListener(
+
+  "keydown",
+
+  (event) => {
+
+    if (
+      event.key === "Escape"
+    ) {
+
+      infoPanel.classList.remove(
+        "visible"
+      );
+
+    }
+
+  }
+
 );
 
 
@@ -1115,6 +1318,7 @@ const clock =
 
 
 function animate() {
+
 
   const elapsed =
     clock.getElapsedTime();
@@ -1132,16 +1336,24 @@ function animate() {
     .uMouse
     .value
     .lerp(
+
       targetMouse,
+
       0.035
+
     );
 
 
   zoom =
+
     THREE.MathUtils.lerp(
+
       zoom,
+
       targetZoom,
+
       0.055
+
     );
 
 
@@ -1153,8 +1365,10 @@ function animate() {
 
 
   renderer.render(
+
     scene,
     camera
+
   );
 
 
@@ -1169,10 +1383,11 @@ animate();
 
 
 /* =========================================================
-   TELA DE CARREGAMENTO
+   LOADING
 ========================================================= */
 
 setTimeout(
+
   () => {
 
     const loading =
@@ -1182,7 +1397,9 @@ setTimeout(
 
 
     if (!loading) {
+
       return;
+
     }
 
 
@@ -1191,16 +1408,19 @@ setTimeout(
 
 
     setTimeout(
+
       () => {
 
         loading.remove();
 
       },
 
-      750
+      850
+
     );
 
   },
 
-  650
+  900
+
 );
