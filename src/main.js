@@ -1,1236 +1,935 @@
 import * as THREE from "three";
-
 import "./style.css";
 
-
 /* =========================================================
-   CENA
+   CONFIGURAÇÃO
 ========================================================= */
 
-const scene =
-  new THREE.Scene();
+const canvas = document.querySelector("#space");
 
+const scene = new THREE.Scene();
 
-const camera =
-  new THREE.Camera();
+const camera = new THREE.PerspectiveCamera(
+  45,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  100
+);
 
+camera.position.set(0, 0, 5);
 
-/* =========================================================
-   RENDERER
-========================================================= */
-
-const renderer =
-  new THREE.WebGLRenderer({
-
-    antialias: false,
-
-    powerPreference:
-      "high-performance"
-
-  });
-
+const renderer = new THREE.WebGLRenderer({
+  canvas,
+  antialias: true,
+  alpha: false,
+  powerPreference: "high-performance"
+});
 
 renderer.setPixelRatio(
-
-  Math.min(
-    window.devicePixelRatio,
-    1.8
-  )
-
+  Math.min(window.devicePixelRatio, 2)
 );
-
 
 renderer.setSize(
-
   window.innerWidth,
   window.innerHeight
-
 );
 
-
-renderer.outputColorSpace =
-  THREE.SRGBColorSpace;
-
-
-document
-  .querySelector("#app")
-  .appendChild(
-    renderer.domElement
-  );
-
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 /* =========================================================
-   VERTEX SHADER
+   GRUPO PRINCIPAL
 ========================================================= */
 
-const vertexShader = `
+const universe = new THREE.Group();
 
-varying vec2 vUv;
+scene.add(universe);
 
-void main() {
+/* =========================================================
+   FUNDO
+========================================================= */
 
-  vUv = uv;
+scene.background = new THREE.Color(0x000000);
 
-  gl_Position =
-    vec4(
-      position.xy,
-      0.0,
-      1.0
+/* =========================================================
+   ESTRELAS
+========================================================= */
+
+const starCount = 1800;
+
+const starPositions = new Float32Array(
+  starCount * 3
+);
+
+const starSizes = new Float32Array(
+  starCount
+);
+
+for (let i = 0; i < starCount; i++) {
+
+  const radius =
+    THREE.MathUtils.randFloat(8, 35);
+
+  const theta =
+    Math.random() * Math.PI * 2;
+
+  const phi =
+    Math.acos(
+      THREE.MathUtils.randFloatSpread(2)
     );
 
+  const x =
+    radius *
+    Math.sin(phi) *
+    Math.cos(theta);
+
+  const y =
+    radius *
+    Math.cos(phi);
+
+  const z =
+    radius *
+    Math.sin(phi) *
+    Math.sin(theta);
+
+  starPositions[i * 3] = x;
+  starPositions[i * 3 + 1] = y;
+  starPositions[i * 3 + 2] = z;
+
+  starSizes[i] =
+    THREE.MathUtils.randFloat(0.4, 2.2);
 }
 
-`;
-
-
-/* =========================================================
-   FRAGMENT SHADER
-========================================================= */
-
-const fragmentShader = `
-
-precision highp float;
-
-
-uniform vec2 uResolution;
-
-uniform float uTime;
-
-uniform vec2 uMouse;
-
-uniform float uZoom;
-
-
-varying vec2 vUv;
-
-
-#define PI 3.14159265359
-
-
-/* =========================================================
-   HASH
-========================================================= */
-
-float hash21(vec2 p) {
-
-  p =
-    fract(
-      p *
-      vec2(
-        123.34,
-        456.21
-      )
-    );
-
-  p +=
-    dot(
-      p,
-      p + 45.32
-    );
-
-  return fract(
-    p.x * p.y
-  );
-
-}
-
-
-/* =========================================================
-   NOISE
-========================================================= */
-
-float noise(vec2 p) {
-
-  vec2 i =
-    floor(p);
-
-  vec2 f =
-    fract(p);
-
-
-  f =
-    f *
-    f *
-    (3.0 - 2.0 * f);
-
-
-  float a =
-    hash21(i);
-
-  float b =
-    hash21(
-      i +
-      vec2(1.0, 0.0)
-    );
-
-  float c =
-    hash21(
-      i +
-      vec2(0.0, 1.0)
-    );
-
-  float d =
-    hash21(
-      i +
-      vec2(1.0, 1.0)
-    );
-
-
-  return mix(
-
-    mix(
-      a,
-      b,
-      f.x
-    ),
-
-    mix(
-      c,
-      d,
-      f.x
-    ),
-
-    f.y
-
-  );
-
-}
-
-
-/* =========================================================
-   FBM
-========================================================= */
-
-float fbm(vec2 p) {
-
-  float value = 0.0;
-
-  float amplitude = 0.5;
-
-
-  for (
-    int i = 0;
-    i < 5;
-    i++
-  ) {
-
-    value +=
-      amplitude *
-      noise(p);
-
-    p *= 2.03;
-
-    amplitude *= 0.5;
-
-  }
-
-
-  return value;
-
-}
-
-
-/* =========================================================
-   MAIN
-========================================================= */
-
-void main() {
-
-
-  /* -------------------------------------------------------
-     COORDENADAS
-  ------------------------------------------------------- */
-
-  vec2 uv =
-
-    (
-      gl_FragCoord.xy -
-      0.5 *
-      uResolution.xy
-    )
-    /
-    uResolution.y;
-
-
-  /* -------------------------------------------------------
-     MOVIMENTO DO MOUSE
-  ------------------------------------------------------- */
-
-  vec2 mouse =
-    uMouse -
-    0.5;
-
-
-  /* Movimento orbital */
-
-  float orbitX =
-    mouse.x *
-    0.11;
-
-
-  float orbitY =
-    mouse.y *
-    0.075;
-
-
-  uv.x +=
-    orbitX *
-    (0.8 + uv.y);
-
-
-  uv.y +=
-    orbitY *
-    (0.8 + uv.x);
-
-
-  /* -------------------------------------------------------
-     ZOOM
-  ------------------------------------------------------- */
-
-  uv /=
-    uZoom;
-
-
-  /* -------------------------------------------------------
-     DISTÂNCIA
-  ------------------------------------------------------- */
-
-  float r =
-    length(uv);
-
-
-  /* -------------------------------------------------------
-     ÂNGULO
-  ------------------------------------------------------- */
-
-  float angle =
-    atan(
-      uv.y,
-      uv.x
-    );
-
-
-  /* =======================================================
-     FUNDO
-  ======================================================= */
-
-  vec3 color =
-
-    vec3(
-      0.0012,
-      0.0015,
-      0.003
-    );
-
-
-  /* =======================================================
-     ESTRELAS
-  ======================================================= */
-
-  vec2 starGrid =
-    uv * 18.0;
-
-
-  vec2 starCell =
-    floor(starGrid);
-
-
-  vec2 starLocal =
-    fract(starGrid) -
-    0.5;
-
-
-  float starRandom =
-    hash21(starCell);
-
-
-  vec2 starOffset =
-
-    vec2(
-
-      hash21(
-        starCell + 3.1
-      ),
-
-      hash21(
-        starCell + 8.7
-      )
-
-    )
-    -
-    0.5;
-
-
-  float starShape =
-
-    smoothstep(
-
-      0.055,
-
-      0.0,
-
-      length(
-        starLocal -
-        starOffset * 0.7
-      )
-
-    );
-
-
-  float star =
-
-    step(
-      0.993,
-      starRandom
-    )
-    *
-    starShape;
-
-
-  color +=
-
-    star *
-
-    vec3(
-      0.7,
-      0.85,
-      1.0
-    )
-
-    *
-
-    (
-      0.72 +
-      0.28 *
-      sin(
-        uTime * 1.7 +
-        starRandom * 30.0
-      )
-    );
-
-
-  /* =======================================================
-     GLOW GRAVITACIONAL
-  ======================================================= */
-
-  float gravitationalGlow =
-
-    exp(
-
-      -pow(
-
-        abs(
-          r - 0.205
-        )
-        /
-        0.048,
-
-        2.0
-
-      )
-
-    );
-
-
-  color +=
-
-    gravitationalGlow *
-
-    vec3(
-      1.0,
-      0.34,
-      0.07
-    )
-
-    *
-
-    0.34;
-
-
-  /* =======================================================
-     DISCO DE ACREÇÃO
-  ======================================================= */
-
-  float diskShape =
-
-    smoothstep(
-      0.145,
-      0.095,
-      abs(
-        r - 0.285
-      )
-    )
-
-    *
-
-    smoothstep(
-      0.54,
-      0.32,
-      r
-    );
-
-
-  /* =======================================================
-     ESPIRAL CONTÍNUA
-  ======================================================= */
-
-  float spiralPhase =
-
-    angle
-
-    +
-
-    2.35 *
-    log(
-      max(
-        r,
-        0.035
-      )
-    )
-
-    -
-
-    uTime *
-    0.23;
-
-
-  /* -------------------------------------------------------
-     COORDENADAS CIRCULARES
-
-     Não utilizamos o ângulo diretamente no ruído.
-
-     Isso evita a descontinuidade em -PI / PI.
-  ------------------------------------------------------- */
-
-  vec2 circularCoordinates =
-
-    vec2(
-
-      cos(
-        spiralPhase
-      ),
-
-      sin(
-        spiralPhase
-      )
-
-    );
-
-
-  circularCoordinates *=
-    5.5;
-
-
-  circularCoordinates +=
-
-    vec2(
-
-      r * 23.0,
-
-      r * 7.0
-
-    );
-
-
-  circularCoordinates +=
-
-    vec2(
-
-      uTime * 0.035,
-
-      -uTime * 0.02
-
-    );
-
-
-  /* =======================================================
-     TURBULÊNCIA
-  ======================================================= */
-
-  float turbulence =
-
-    fbm(
-      circularCoordinates
-    );
-
-
-  float filaments =
-
-    pow(
-
-      max(
-        turbulence - 0.22,
-        0.0
-      ),
-
-      1.45
-
-    );
-
-
-  /* =======================================================
-     REGIÕES QUENTES
-  ======================================================= */
-
-  float hotZone =
-
-    exp(
-
-      -pow(
-
-        (
-          r - 0.225
-        )
-        /
-        0.078,
-
-        2.0
-
-      )
-
-    );
-
-
-  float innerHotZone =
-
-    exp(
-
-      -pow(
-
-        (
-          r - 0.165
-        )
-        /
-        0.035,
-
-        2.0
-
-      )
-
-    );
-
-
-  /* =======================================================
-     COR DO DISCO
-  ======================================================= */
-
-  vec3 diskColor =
-
-    mix(
-
-      vec3(
-        0.95,
-        0.025,
-        0.002
-      ),
-
-      vec3(
-        1.0,
-        0.70,
-        0.16
-      ),
-
-      hotZone
-
-    );
-
-
-  diskColor =
-
-    mix(
-
-      diskColor,
-
-      vec3(
-        1.0,
-        0.96,
-        0.74
-      ),
-
-      innerHotZone
-
-    );
-
-
-  /* =======================================================
-     DISCO PRINCIPAL
-  ======================================================= */
-
-  color +=
-
-    diskShape *
-
-    filaments *
-
-    diskColor *
-
-    (
-      0.72 +
-      1.45 *
-      hotZone
-    );
-
-
-  /* =======================================================
-     DISCO EXTERNO
-  ======================================================= */
-
-  float outerDisk =
-
-    smoothstep(
-      0.55,
-      0.34,
-      r
-    )
-
-    *
-
-    exp(
-
-      -pow(
-
-        (
-          r - 0.39
-        )
-        /
-        0.14,
-
-        2.0
-
-      )
-
-    );
-
-
-  float outerAngle =
-
-    angle -
-    uTime * 0.16;
-
-
-  vec2 outerCoordinates =
-
-    vec2(
-
-      cos(
-        outerAngle
-      ),
-
-      sin(
-        outerAngle
-      )
-
-    );
-
-
-  outerCoordinates *=
-    4.0;
-
-
-  outerCoordinates +=
-
-    vec2(
-
-      r * 12.0,
-
-      uTime * 0.015
-
-    );
-
-
-  float outerNoise =
-
-    fbm(
-      outerCoordinates
-    );
-
-
-  color +=
-
-    outerDisk *
-
-    pow(
-      outerNoise,
-      2.0
-    )
-
-    *
-
-    vec3(
-      0.42,
-      0.018,
-      0.002
-    )
-
-    *
-
-    0.85;
-
-
-  /* =======================================================
-     HORIZONTE DE EVENTOS
-  ======================================================= */
-
-  float horizon =
-
-    smoothstep(
-      0.125,
-      0.093,
-      r
-    );
-
-
-  color *=
-
-    1.0 -
-    horizon;
-
-
-  /* =======================================================
-     ANEL DE FÓTONS
-  ======================================================= */
-
-  float photonRing =
-
-    exp(
-
-      -pow(
-
-        (
-          r - 0.128
-        )
-        /
-        0.0105,
-
-        2.0
-
-      )
-
-    );
-
-
-  color +=
-
-    photonRing *
-
-    vec3(
-      1.0,
-      0.52,
-      0.14
-    )
-
-    *
-
-    1.25;
-
-
-  /* =======================================================
-     ANEL SECUNDÁRIO
-  ======================================================= */
-
-  float secondaryRing =
-
-    exp(
-
-      -pow(
-
-        (
-          r - 0.153
-        )
-        /
-        0.025,
-
-        2.0
-
-      )
-
-    );
-
-
-  color +=
-
-    secondaryRing *
-
-    vec3(
-      0.55,
-      0.16,
-      0.025
-    )
-
-    *
-
-    0.24;
-
-
-  /* =======================================================
-     VINHETA
-  ======================================================= */
-
-  color *=
-
-    1.0 -
-
-    smoothstep(
-      0.38,
-      0.92,
-      r
-    )
-
-    *
-
-    0.52;
-
-
-  /* =======================================================
-     TONEMAPPING
-  ======================================================= */
-
-  color =
-
-    1.0 -
-    exp(
-      -color * 1.38
-    );
-
-
-  color =
-
-    pow(
-      color,
-      vec3(0.92)
-    );
-
-
-  gl_FragColor =
-    vec4(
-      color,
-      1.0
-    );
-
-}
-
-`;
-
-
-/* =========================================================
-   MATERIAL
-========================================================= */
-
-const material =
-
+const starsGeometry =
+  new THREE.BufferGeometry();
+
+starsGeometry.setAttribute(
+  "position",
+  new THREE.BufferAttribute(
+    starPositions,
+    3
+  )
+);
+
+starsGeometry.setAttribute(
+  "size",
+  new THREE.BufferAttribute(
+    starSizes,
+    1
+  )
+);
+
+const starsMaterial =
   new THREE.ShaderMaterial({
 
-    vertexShader,
+    transparent: true,
 
-    fragmentShader,
+    depthWrite: false,
 
-    uniforms: {
+    vertexShader: `
 
-      uResolution: {
+      attribute float size;
 
-        value:
-          new THREE.Vector2(
+      void main() {
 
-            window.innerWidth,
-            window.innerHeight
+        vec4 mvPosition =
+          modelViewMatrix *
+          vec4(position, 1.0);
 
-          )
+        gl_PointSize =
+          size *
+          (180.0 / -mvPosition.z);
 
-      },
-
-
-      uTime: {
-
-        value: 0
-
-      },
-
-
-      uMouse: {
-
-        value:
-          new THREE.Vector2(
-            0.5,
-            0.5
-          )
-
-      },
-
-
-      uZoom: {
-
-        value: 1.0
+        gl_Position =
+          projectionMatrix *
+          mvPosition;
 
       }
 
-    }
+    `,
 
+    fragmentShader: `
+
+      void main() {
+
+        float distanceToCenter =
+          distance(
+            gl_PointCoord,
+            vec2(0.5)
+          );
+
+        float alpha =
+          1.0 -
+          smoothstep(
+            0.0,
+            0.5,
+            distanceToCenter
+          );
+
+        gl_FragColor =
+          vec4(
+            0.8,
+            0.88,
+            1.0,
+            alpha
+          );
+
+      }
+
+    `
   });
 
-
-/* =========================================================
-   PLANO
-========================================================= */
-
-const quad =
-
-  new THREE.Mesh(
-
-    new THREE.PlaneGeometry(
-      2,
-      2
-    ),
-
-    material
-
+const stars =
+  new THREE.Points(
+    starsGeometry,
+    starsMaterial
   );
 
+universe.add(stars);
 
-scene.add(
-  quad
-);
+/* =========================================================
+   SHADER DO BURACO NEGRO
+========================================================= */
 
+const blackHoleGeometry =
+  new THREE.PlaneGeometry(
+    2,
+    2
+  );
+
+const blackHoleMaterial =
+  new THREE.ShaderMaterial({
+
+    uniforms: {
+
+      uTime: {
+        value: 0
+      },
+
+      uMouse: {
+        value: new THREE.Vector2(0, 0)
+      },
+
+      uZoom: {
+        value: 1
+      }
+
+    },
+
+    vertexShader: `
+
+      varying vec2 vUv;
+
+      void main() {
+
+        vUv = uv;
+
+        gl_Position =
+          vec4(
+            position,
+            1.0
+          );
+
+      }
+
+    `,
+
+    fragmentShader: `
+
+      precision highp float;
+
+      uniform float uTime;
+
+      uniform vec2 uMouse;
+
+      uniform float uZoom;
+
+      varying vec2 vUv;
+
+      #define PI 3.14159265359
+
+      float hash(vec2 p) {
+
+        p =
+          fract(
+            p *
+            vec2(
+              123.34,
+              456.21
+            )
+          );
+
+        p +=
+          dot(
+            p,
+            p + 45.32
+          );
+
+        return fract(
+          p.x * p.y
+        );
+
+      }
+
+      float noise(vec2 p) {
+
+        vec2 i =
+          floor(p);
+
+        vec2 f =
+          fract(p);
+
+        f =
+          f * f *
+          (3.0 - 2.0 * f);
+
+        return mix(
+
+          mix(
+            hash(i),
+            hash(i + vec2(1.0, 0.0)),
+            f.x
+          ),
+
+          mix(
+            hash(i + vec2(0.0, 1.0)),
+            hash(i + vec2(1.0, 1.0)),
+            f.x
+          ),
+
+          f.y
+        );
+
+      }
+
+      float fbm(vec2 p) {
+
+        float value = 0.0;
+
+        float amplitude = 0.5;
+
+        for (
+          int i = 0;
+          i < 5;
+          i++
+        ) {
+
+          value +=
+            noise(p) *
+            amplitude;
+
+          p *= 2.0;
+
+          amplitude *= 0.5;
+
+        }
+
+        return value;
+
+      }
+
+      vec3 palette(
+        float value
+      ) {
+
+        vec3 dark =
+          vec3(
+            0.12,
+            0.005,
+            0.001
+          );
+
+        vec3 red =
+          vec3(
+            0.65,
+            0.035,
+            0.005
+          );
+
+        vec3 orange =
+          vec3(
+            1.0,
+            0.25,
+            0.015
+          );
+
+        vec3 gold =
+          vec3(
+            1.0,
+            0.65,
+            0.10
+          );
+
+        vec3 white =
+          vec3(
+            1.0,
+            0.91,
+            0.66
+          );
+
+        vec3 color =
+          mix(
+            dark,
+            red,
+            smoothstep(
+              0.0,
+              0.35,
+              value
+            )
+          );
+
+        color =
+          mix(
+            color,
+            orange,
+            smoothstep(
+              0.28,
+              0.65,
+              value
+            )
+          );
+
+        color =
+          mix(
+            color,
+            gold,
+            smoothstep(
+              0.55,
+              0.82,
+              value
+            )
+          );
+
+        color =
+          mix(
+            color,
+            white,
+            smoothstep(
+              0.78,
+              1.0,
+              value
+            )
+          );
+
+        return color;
+
+      }
+
+      void main() {
+
+        vec2 uv =
+          vUv * 2.0 -
+          1.0;
+
+        uv.x *=
+          1.777;
+
+        vec2 mouse =
+          uMouse *
+          0.15;
+
+        uv += mouse;
+
+        float time =
+          uTime *
+          0.075;
+
+        float radius =
+          length(uv);
+
+        float angle =
+          atan(
+            uv.y,
+            uv.x
+          );
+
+        /*
+          DISTORÇÃO
+        */
+
+        float gravitationalPull =
+          0.16 /
+          max(
+            radius,
+            0.16
+          );
+
+        vec2 warped =
+          uv;
+
+        warped +=
+          normalize(uv) *
+          gravitationalPull *
+          0.16;
+
+        float warpedRadius =
+          length(warped);
+
+        float warpedAngle =
+          atan(
+            warped.y,
+            warped.x
+          );
+
+        /*
+          DISCO
+        */
+
+        float diskRadius =
+          warpedRadius;
+
+        float diskMask =
+          smoothstep(
+            1.02,
+            0.62,
+            diskRadius
+          ) *
+          smoothstep(
+            0.20,
+            0.38,
+            diskRadius
+          );
+
+        /*
+          ESPIRAL
+        */
+
+        float spiral =
+          warpedAngle +
+          time +
+          diskRadius *
+          8.0;
+
+        vec2 spiralUv =
+          vec2(
+            cos(spiral),
+            sin(spiral)
+          ) *
+          diskRadius;
+
+        float turbulence =
+          fbm(
+            warped * 4.0 +
+            spiralUv * 2.0 +
+            time
+          );
+
+        float layers =
+          0.5 +
+          0.5 *
+          sin(
+            spiral *
+            8.0 +
+            turbulence *
+            8.0
+          );
+
+        layers =
+          pow(
+            layers,
+            2.2
+          );
+
+        float disk =
+          diskMask *
+          (
+            turbulence *
+            0.55 +
+            layers *
+            0.45
+          );
+
+        /*
+          LUZ DO ANEL
+        */
+
+        float ring =
+          1.0 -
+          smoothstep(
+            0.08,
+            0.16,
+            abs(
+              warpedRadius -
+              0.38
+            )
+          );
+
+        ring *=
+          smoothstep(
+            0.0,
+            0.35,
+            warpedRadius
+          );
+
+        /*
+          ANEL INTERNO
+        */
+
+        float innerRing =
+          1.0 -
+          smoothstep(
+            0.035,
+            0.085,
+            abs(
+              warpedRadius -
+              0.43
+            )
+          );
+
+        /*
+          SOMBRA
+        */
+
+        float eventHorizon =
+          1.0 -
+          smoothstep(
+            0.31,
+            0.36,
+            warpedRadius
+          );
+
+        /*
+          CORES
+        */
+
+        vec3 diskColor =
+          palette(
+            clamp(
+              disk +
+              turbulence * 0.15,
+              0.0,
+              1.0
+            )
+          );
+
+        diskColor *=
+          diskMask *
+          2.0;
+
+        vec3 ringColor =
+          vec3(
+            1.0,
+            0.55,
+            0.08
+          ) *
+          ring *
+          3.0;
+
+        vec3 innerColor =
+          vec3(
+            1.0,
+            0.72,
+            0.25
+          ) *
+          innerRing *
+          2.5;
+
+        vec3 color =
+          diskColor +
+          ringColor +
+          innerColor;
+
+        /*
+          BRILHO EXTERNO
+        */
+
+        float glow =
+          exp(
+            -abs(
+              warpedRadius -
+              0.5
+            ) *
+            9.0
+          );
+
+        color +=
+          vec3(
+            0.65,
+            0.08,
+            0.01
+          ) *
+          glow *
+          0.25;
+
+        /*
+          CENTRO PRETO
+        */
+
+        color =
+          mix(
+            color,
+            vec3(0.0),
+            eventHorizon
+          );
+
+        /*
+          BORDA
+        */
+
+        float edge =
+          smoothstep(
+            1.25,
+            0.65,
+            radius
+          );
+
+        color *=
+          edge;
+
+        /*
+          EXPOSIÇÃO
+        */
+
+        color =
+          1.0 -
+          exp(
+            -color *
+            1.25
+          );
+
+        gl_FragColor =
+          vec4(
+            color,
+            1.0
+          );
+
+      }
+
+    `
+  });
+
+const blackHole =
+  new THREE.Mesh(
+    blackHoleGeometry,
+    blackHoleMaterial
+  );
+
+blackHole.position.z = 0;
+
+universe.add(blackHole);
 
 /* =========================================================
    INTERAÇÃO
 ========================================================= */
 
-const targetMouse =
+let targetRotationX = 0;
+let targetRotationY = 0;
 
-  new THREE.Vector2(
-    0.5,
-    0.5
-  );
+let currentRotationX = 0;
+let currentRotationY = 0;
 
+let targetZoom = 1;
+let currentZoom = 1;
 
-let targetZoom =
-  1.0;
+let dragging = false;
 
+let previousMouseX = 0;
+let previousMouseY = 0;
 
-let zoom =
-  1.0;
-
-
-let dragging =
-  false;
-
-
-let lastX =
-  0;
-
-
-let lastY =
-  0;
-
+const mouse =
+  new THREE.Vector2();
 
 /* =========================================================
    MOUSE
 ========================================================= */
 
-renderer.domElement.addEventListener(
-
+window.addEventListener(
   "pointerdown",
-
   (event) => {
 
-    dragging =
-      true;
+    dragging = true;
 
-
-    lastX =
+    previousMouseX =
       event.clientX;
 
-
-    lastY =
+    previousMouseY =
       event.clientY;
 
-
-    renderer.domElement
-      .setPointerCapture(
-        event.pointerId
-      );
-
   }
-
 );
 
-
-renderer.domElement.addEventListener(
-
+window.addEventListener(
   "pointermove",
-
   (event) => {
 
-    targetMouse.set(
-
+    const normalizedX =
       event.clientX /
-        window.innerWidth,
+      window.innerWidth *
+      2 -
+      1;
 
-      1.0 -
-
+    const normalizedY =
       event.clientY /
-        window.innerHeight
+      window.innerHeight *
+      2 -
+      1;
 
+    mouse.x = normalizedX;
+    mouse.y = -normalizedY;
+
+    blackHoleMaterial.uniforms.uMouse.value.lerp(
+      mouse,
+      0.08
     );
 
-
     if (!dragging) {
-
       return;
-
     }
 
-
-    const dx =
+    const deltaX =
       event.clientX -
-      lastX;
+      previousMouseX;
 
-
-    const dy =
+    const deltaY =
       event.clientY -
-      lastY;
+      previousMouseY;
 
+    targetRotationY +=
+      deltaX *
+      0.001;
 
-    lastX =
+    targetRotationX +=
+      deltaY *
+      0.001;
+
+    targetRotationX =
+      THREE.MathUtils.clamp(
+        targetRotationX,
+        -0.45,
+        0.45
+      );
+
+    previousMouseX =
       event.clientX;
 
-
-    lastY =
+    previousMouseY =
       event.clientY;
 
-
-    targetMouse.x +=
-      dx /
-      window.innerWidth *
-      0.22;
-
-
-    targetMouse.y +=
-      dy /
-      window.innerHeight *
-      0.22;
-
-
-    targetMouse.x =
-      THREE.MathUtils.clamp(
-        targetMouse.x,
-        0.0,
-        1.0
-      );
-
-
-    targetMouse.y =
-      THREE.MathUtils.clamp(
-        targetMouse.y,
-        0.0,
-        1.0
-      );
-
   }
-
 );
 
-
-renderer.domElement.addEventListener(
-
+window.addEventListener(
   "pointerup",
-
   () => {
 
-    dragging =
-      false;
+    dragging = false;
 
   }
-
 );
-
-
-renderer.domElement.addEventListener(
-
-  "pointercancel",
-
-  () => {
-
-    dragging =
-      false;
-
-  }
-
-);
-
 
 /* =========================================================
-   ZOOM
+   TOUCH
 ========================================================= */
 
-renderer.domElement.addEventListener(
+window.addEventListener(
+  "touchstart",
+  (event) => {
 
+    if (
+      event.touches.length !== 1
+    ) {
+      return;
+    }
+
+    dragging = true;
+
+    previousMouseX =
+      event.touches[0].clientX;
+
+    previousMouseY =
+      event.touches[0].clientY;
+
+  },
+  {
+    passive: true
+  }
+);
+
+window.addEventListener(
+  "touchmove",
+  (event) => {
+
+    if (
+      event.touches.length !== 1
+    ) {
+      return;
+    }
+
+    const touch =
+      event.touches[0];
+
+    const deltaX =
+      touch.clientX -
+      previousMouseX;
+
+    const deltaY =
+      touch.clientY -
+      previousMouseY;
+
+    targetRotationY +=
+      deltaX *
+      0.001;
+
+    targetRotationX +=
+      deltaY *
+      0.001;
+
+    targetRotationX =
+      THREE.MathUtils.clamp(
+        targetRotationX,
+        -0.45,
+        0.45
+      );
+
+    previousMouseX =
+      touch.clientX;
+
+    previousMouseY =
+      touch.clientY;
+
+  },
+  {
+    passive: true
+  }
+);
+
+window.addEventListener(
+  "touchend",
+  () => {
+
+    dragging = false;
+
+  },
+  {
+    passive: true
+  }
+);
+
+/* =========================================================
+   SCROLL / ZOOM
+========================================================= */
+
+window.addEventListener(
   "wheel",
-
   (event) => {
 
     event.preventDefault();
 
+    targetZoom +=
+      event.deltaY *
+      0.0007;
 
     targetZoom =
-
       THREE.MathUtils.clamp(
-
-        targetZoom *
-
-        Math.exp(
-          -event.deltaY *
-          0.0007
-        ),
-
-        0.72,
-
-        1.55
-
+        targetZoom,
+        0.75,
+        1.35
       );
 
   },
-
   {
     passive: false
   }
-
 );
-
-
-/* =========================================================
-   RESIZE
-========================================================= */
-
-window.addEventListener(
-
-  "resize",
-
-  () => {
-
-    renderer.setSize(
-
-      window.innerWidth,
-      window.innerHeight
-
-    );
-
-
-    material
-      .uniforms
-      .uResolution
-      .value
-      .set(
-
-        window.innerWidth,
-        window.innerHeight
-
-      );
-
-  }
-
-);
-
 
 /* =========================================================
    BOTÃO EXPLORAR
@@ -1238,76 +937,61 @@ window.addEventListener(
 
 const exploreButton =
   document.querySelector(
-    "#exploreBtn"
+    "#exploreButton"
   );
-
-
-const infoPanel =
-  document.querySelector(
-    "#infoPanel"
-  );
-
-
-const closePanel =
-  document.querySelector(
-    "#closePanel"
-  );
-
 
 exploreButton.addEventListener(
-
   "click",
-
   () => {
 
-    infoPanel.classList.add(
-      "visible"
+    targetZoom = 1.28;
+
+    targetRotationX = 0;
+    targetRotationY += 0.25;
+
+    exploreButton.classList.add(
+      "active"
     );
 
-  }
+    setTimeout(() => {
 
-);
+      exploreButton.classList.remove(
+        "active"
+      );
 
-
-closePanel.addEventListener(
-
-  "click",
-
-  () => {
-
-    infoPanel.classList.remove(
-      "visible"
-    );
+    }, 500);
 
   }
-
 );
-
 
 /* =========================================================
-   ESC FECHA O PAINEL
+   RESIZE
 ========================================================= */
 
 window.addEventListener(
+  "resize",
+  () => {
 
-  "keydown",
+    camera.aspect =
+      window.innerWidth /
+      window.innerHeight;
 
-  (event) => {
+    camera.updateProjectionMatrix();
 
-    if (
-      event.key === "Escape"
-    ) {
+    renderer.setPixelRatio(
+      Math.min(
+        window.devicePixelRatio,
+        2
+      )
+    );
 
-      infoPanel.classList.remove(
-        "visible"
-      );
-
-    }
+    renderer.setSize(
+      window.innerWidth,
+      window.innerHeight
+    );
 
   }
-
 );
-
 
 /* =========================================================
    ANIMAÇÃO
@@ -1316,111 +1000,100 @@ window.addEventListener(
 const clock =
   new THREE.Clock();
 
-
 function animate() {
-
-
-  const elapsed =
-    clock.getElapsedTime();
-
-
-  material
-    .uniforms
-    .uTime
-    .value =
-    elapsed;
-
-
-  material
-    .uniforms
-    .uMouse
-    .value
-    .lerp(
-
-      targetMouse,
-
-      0.035
-
-    );
-
-
-  zoom =
-
-    THREE.MathUtils.lerp(
-
-      zoom,
-
-      targetZoom,
-
-      0.055
-
-    );
-
-
-  material
-    .uniforms
-    .uZoom
-    .value =
-    zoom;
-
-
-  renderer.render(
-
-    scene,
-    camera
-
-  );
-
 
   requestAnimationFrame(
     animate
   );
 
-}
+  const elapsed =
+    clock.getElapsedTime();
 
+  blackHoleMaterial.uniforms.uTime.value =
+    elapsed;
+
+  /*
+    SUAVIZA MOVIMENTO
+  */
+
+  currentRotationX +=
+    (
+      targetRotationX -
+      currentRotationX
+    ) *
+    0.045;
+
+  currentRotationY +=
+    (
+      targetRotationY -
+      currentRotationY
+    ) *
+    0.045;
+
+  currentZoom +=
+    (
+      targetZoom -
+      currentZoom
+    ) *
+    0.045;
+
+  /*
+    MOVIMENTO DO UNIVERSO
+  */
+
+  universe.rotation.x =
+    currentRotationX;
+
+  universe.rotation.y =
+    currentRotationY;
+
+  universe.scale.set(
+    currentZoom,
+    currentZoom,
+    currentZoom
+  );
+
+  /*
+    MOVIMENTO AUTOMÁTICO MUITO SUAVE
+  */
+
+  if (!dragging) {
+
+    targetRotationY +=
+      0.00012;
+
+  }
+
+  renderer.render(
+    scene,
+    camera
+  );
+}
 
 animate();
 
-
 /* =========================================================
-   LOADING
+   LOADER
 ========================================================= */
 
-setTimeout(
-
+window.addEventListener(
+  "load",
   () => {
 
-    const loading =
-      document.querySelector(
-        "#loading"
-      );
+    setTimeout(() => {
 
+      const loader =
+        document.querySelector(
+          "#loader"
+        );
 
-    if (!loading) {
+      if (loader) {
+        loader.classList.add(
+          "hidden"
+        );
+      }
 
-      return;
+    }, 900);
 
-    }
-
-
-    loading.style.opacity =
-      "0";
-
-
-    setTimeout(
-
-      () => {
-
-        loading.remove();
-
-      },
-
-      850
-
-    );
-
-  },
-
-  900
-
+  }
 );
