@@ -253,6 +253,10 @@ const blackHoleMaterial =
 
       #define PI 3.14159265359
 
+      /* =====================================================
+         FUNÇÕES DE RUÍDO
+      ===================================================== */
+
       float hash(vec2 p) {
 
         p =
@@ -332,6 +336,10 @@ const blackHoleMaterial =
         return value;
 
       }
+
+      /* =====================================================
+         PALETA
+      ===================================================== */
 
       vec3 palette(
         float value
@@ -420,20 +428,35 @@ const blackHoleMaterial =
 
       }
 
+      /* =====================================================
+         SHADER PRINCIPAL
+      ===================================================== */
+
       void main() {
 
         vec2 uv =
           vUv * 2.0 -
           1.0;
 
-        uv.x *=
-          1.777;
+        /*
+          Mantém a proporção visual da tela.
+        */
+
+        uv.x *= 1.777;
+
+        /*
+          Pequena influência do mouse.
+        */
 
         vec2 mouse =
           uMouse *
           0.15;
 
         uv += mouse;
+
+        /*
+          Velocidade do disco.
+        */
 
         float time =
           uTime *
@@ -442,18 +465,18 @@ const blackHoleMaterial =
             uExplore * 0.13
           );
 
-        float radius =
-          length(uv);
-
-        float angle =
-          atan(
-            uv.y,
-            uv.x
-          );
-
         /*
           DISTORÇÃO GRAVITACIONAL
         */
+
+        float radius =
+          length(uv);
+
+        float safeRadius =
+          max(
+            radius,
+            0.001
+          );
 
         float gravitationalPull =
           (
@@ -465,11 +488,15 @@ const blackHoleMaterial =
             0.16
           );
 
+        vec2 direction =
+          uv /
+          safeRadius;
+
         vec2 warped =
           uv;
 
         warped +=
-          normalize(uv) *
+          direction *
           gravitationalPull *
           (
             0.16 +
@@ -486,23 +513,43 @@ const blackHoleMaterial =
           );
 
         /*
-          DISCO
+          ====================================================
+          DISCO DE ACREÇÃO
+          ====================================================
         */
 
         float diskRadius =
           warpedRadius;
 
-        float diskMask =
+        /*
+          Máscara externa do disco.
+        */
+
+        float outerDisk =
           smoothstep(
-            1.02,
-            0.62,
-            diskRadius
-          ) *
-          smoothstep(
-            0.20,
-            0.38,
+            1.08,
+            0.68,
             diskRadius
           );
+
+        /*
+          Máscara interna.
+
+          O ponto importante aqui é que o disco NÃO recebe
+          iluminação diretamente no centro do buraco negro.
+          Isso evita a criação da faixa horizontal.
+        */
+
+        float innerDisk =
+          smoothstep(
+            0.25,
+            0.40,
+            diskRadius
+          );
+
+        float diskMask =
+          outerDisk *
+          innerDisk;
 
         /*
           ESPIRAL
@@ -524,12 +571,20 @@ const blackHoleMaterial =
           ) *
           diskRadius;
 
+        /*
+          TURBULÊNCIA
+        */
+
         float turbulence =
           fbm(
             warped * 4.0 +
             spiralUv * 2.0 +
             time
           );
+
+        /*
+          CAMADAS DO DISCO
+        */
 
         float layers =
           0.5 +
@@ -540,8 +595,7 @@ const blackHoleMaterial =
               8.0 +
               uExplore * 2.0
             ) +
-            turbulence *
-            8.0
+            turbulence * 8.0
           );
 
         layers =
@@ -553,40 +607,79 @@ const blackHoleMaterial =
         float disk =
           diskMask *
           (
-            turbulence *
-            0.55 +
-            layers *
-            0.45
+            turbulence * 0.55 +
+            layers * 0.45
           );
 
         /*
-          LUZ DO ANEL
+          Suavização adicional no centro.
+
+          Esta região impede que o shader crie uma linha
+          iluminada atravessando o horizonte.
         */
+
+        float centerFade =
+          smoothstep(
+            0.34,
+            0.48,
+            diskRadius
+          );
+
+        disk *=
+          centerFade;
+
+        /*
+          ====================================================
+          ANEL DE LUZ
+          ====================================================
+        */
+
+        float ringRadius =
+          0.38 -
+          uExplore * 0.025;
+
+        float ringDistance =
+          abs(
+            warpedRadius -
+            ringRadius
+          );
 
         float ring =
           1.0 -
           smoothstep(
-            0.08,
+            0.07,
             0.16,
-            abs(
-              warpedRadius -
-              (
-                0.38 -
-                uExplore * 0.025
-              )
-            )
+            ringDistance
           );
 
         ring *=
           smoothstep(
             0.0,
-            0.35,
+            0.32,
             warpedRadius
           );
 
         /*
-          ANEL INTERNO
+          O anel desaparece suavemente antes de entrar
+          completamente no horizonte.
         */
+
+        ring *=
+          smoothstep(
+            0.28,
+            0.39,
+            warpedRadius
+          );
+
+        /*
+          ====================================================
+          ANEL INTERNO
+          ====================================================
+        */
+
+        float innerRingRadius =
+          0.43 -
+          uExplore * 0.03;
 
         float innerRing =
           1.0 -
@@ -595,31 +688,44 @@ const blackHoleMaterial =
             0.085,
             abs(
               warpedRadius -
-              (
-                0.43 -
-                uExplore * 0.03
-              )
+              innerRingRadius
             )
           );
 
         /*
-          SOMBRA
+          Suavização para impedir uma linha atravessando
+          o centro.
         */
 
-        float eventHorizon =
-          1.0 -
+        innerRing *=
           smoothstep(
-            0.31 -
-            uExplore * 0.025,
-
-            0.36 -
-            uExplore * 0.025,
-
+            0.31,
+            0.40,
             warpedRadius
           );
 
         /*
+          ====================================================
+          HORIZONTE DE EVENTOS
+          ====================================================
+        */
+
+        float horizonRadius =
+          0.33 -
+          uExplore * 0.025;
+
+        float eventHorizon =
+          1.0 -
+          smoothstep(
+            horizonRadius,
+            horizonRadius + 0.055,
+            warpedRadius
+          );
+
+        /*
+          ====================================================
           CORES
+          ====================================================
         */
 
         vec3 diskColor =
@@ -669,7 +775,9 @@ const blackHoleMaterial =
           innerColor;
 
         /*
+          ====================================================
           BRILHO EXTERNO
+          ====================================================
         */
 
         float glow =
@@ -684,6 +792,17 @@ const blackHoleMaterial =
             )
           );
 
+        /*
+          Também evitamos que o glow invada o centro.
+        */
+
+        float glowMask =
+          smoothstep(
+            0.28,
+            0.48,
+            warpedRadius
+          );
+
         color +=
           vec3(
             0.65,
@@ -691,13 +810,16 @@ const blackHoleMaterial =
             0.01
           ) *
           glow *
+          glowMask *
           (
             0.25 +
             uExplore * 0.15
           );
 
         /*
-          CENTRO PRETO
+          ====================================================
+          CENTRO ABSOLUTAMENTE ESCURO
+          ====================================================
         */
 
         color =
@@ -708,7 +830,29 @@ const blackHoleMaterial =
           );
 
         /*
+          Pequena proteção adicional contra qualquer
+          iluminação residual no centro.
+        */
+
+        float centerBlack =
+          1.0 -
+          smoothstep(
+            0.0,
+            horizonRadius + 0.015,
+            warpedRadius
+          );
+
+        color =
+          mix(
+            color,
+            vec3(0.0),
+            centerBlack
+          );
+
+        /*
+          ====================================================
           BORDA
+          ====================================================
         */
 
         float edge =
@@ -722,7 +866,9 @@ const blackHoleMaterial =
           edge;
 
         /*
+          ====================================================
           EXPOSIÇÃO
+          ====================================================
         */
 
         color =
@@ -807,7 +953,7 @@ const explorePanel =
   );
 
 /* =========================================================
-   FUNÇÃO DE EXPLORAÇÃO
+   MODO EXPLORAÇÃO
 ========================================================= */
 
 function setExploreMode(
@@ -1251,7 +1397,7 @@ function animate() {
     currentRotationY;
 
   /*
-    PEQUENO MOVIMENTO DE PROFUNDIDADE
+    MOVIMENTO DE PROFUNDIDADE
   */
 
   universe.position.z =
