@@ -211,6 +211,10 @@ const blackHoleMaterial =
 
       uZoom: {
         value: 1
+      },
+
+      uExplore: {
+        value: 0
       }
 
     },
@@ -242,6 +246,8 @@ const blackHoleMaterial =
       uniform vec2 uMouse;
 
       uniform float uZoom;
+
+      uniform float uExplore;
 
       varying vec2 vUv;
 
@@ -431,7 +437,10 @@ const blackHoleMaterial =
 
         float time =
           uTime *
-          0.075;
+          (
+            0.075 +
+            uExplore * 0.13
+          );
 
         float radius =
           length(uv);
@@ -443,11 +452,14 @@ const blackHoleMaterial =
           );
 
         /*
-          DISTORÇÃO
+          DISTORÇÃO GRAVITACIONAL
         */
 
         float gravitationalPull =
-          0.16 /
+          (
+            0.16 +
+            uExplore * 0.055
+          ) /
           max(
             radius,
             0.16
@@ -459,7 +471,10 @@ const blackHoleMaterial =
         warped +=
           normalize(uv) *
           gravitationalPull *
-          0.16;
+          (
+            0.16 +
+            uExplore * 0.10
+          );
 
         float warpedRadius =
           length(warped);
@@ -497,7 +512,10 @@ const blackHoleMaterial =
           warpedAngle +
           time +
           diskRadius *
-          8.0;
+          (
+            8.0 +
+            uExplore * 3.0
+          );
 
         vec2 spiralUv =
           vec2(
@@ -518,7 +536,10 @@ const blackHoleMaterial =
           0.5 *
           sin(
             spiral *
-            8.0 +
+            (
+              8.0 +
+              uExplore * 2.0
+            ) +
             turbulence *
             8.0
           );
@@ -549,7 +570,10 @@ const blackHoleMaterial =
             0.16,
             abs(
               warpedRadius -
-              0.38
+              (
+                0.38 -
+                uExplore * 0.025
+              )
             )
           );
 
@@ -571,7 +595,10 @@ const blackHoleMaterial =
             0.085,
             abs(
               warpedRadius -
-              0.43
+              (
+                0.43 -
+                uExplore * 0.03
+              )
             )
           );
 
@@ -582,8 +609,12 @@ const blackHoleMaterial =
         float eventHorizon =
           1.0 -
           smoothstep(
-            0.31,
-            0.36,
+            0.31 -
+            uExplore * 0.025,
+
+            0.36 -
+            uExplore * 0.025,
+
             warpedRadius
           );
 
@@ -603,7 +634,10 @@ const blackHoleMaterial =
 
         diskColor *=
           diskMask *
-          2.0;
+          (
+            2.0 +
+            uExplore * 0.45
+          );
 
         vec3 ringColor =
           vec3(
@@ -612,7 +646,10 @@ const blackHoleMaterial =
             0.08
           ) *
           ring *
-          3.0;
+          (
+            3.0 +
+            uExplore * 0.8
+          );
 
         vec3 innerColor =
           vec3(
@@ -621,7 +658,10 @@ const blackHoleMaterial =
             0.25
           ) *
           innerRing *
-          2.5;
+          (
+            2.5 +
+            uExplore * 0.6
+          );
 
         vec3 color =
           diskColor +
@@ -638,7 +678,10 @@ const blackHoleMaterial =
               warpedRadius -
               0.5
             ) *
-            9.0
+            (
+              9.0 -
+              uExplore * 2.0
+            )
           );
 
         color +=
@@ -648,7 +691,10 @@ const blackHoleMaterial =
             0.01
           ) *
           glow *
-          0.25;
+          (
+            0.25 +
+            uExplore * 0.15
+          );
 
         /*
           CENTRO PRETO
@@ -683,7 +729,10 @@ const blackHoleMaterial =
           1.0 -
           exp(
             -color *
-            1.25
+            (
+              1.25 +
+              uExplore * 0.18
+            )
           );
 
         gl_FragColor =
@@ -720,6 +769,11 @@ let currentRotationY = 0;
 let targetZoom = 1;
 let currentZoom = 1;
 
+let targetExplore = 0;
+let currentExplore = 0;
+
+let explored = false;
+
 let dragging = false;
 
 let previousMouseX = 0;
@@ -729,12 +783,122 @@ const mouse =
   new THREE.Vector2();
 
 /* =========================================================
+   ELEMENTOS DA INTERFACE
+========================================================= */
+
+const exploreButton =
+  document.querySelector(
+    "#exploreButton"
+  );
+
+const buttonLabel =
+  exploreButton.querySelector(
+    ".button-label"
+  );
+
+const buttonArrow =
+  exploreButton.querySelector(
+    ".arrow"
+  );
+
+const explorePanel =
+  document.querySelector(
+    "#explorePanel"
+  );
+
+/* =========================================================
+   FUNÇÃO DE EXPLORAÇÃO
+========================================================= */
+
+function setExploreMode(
+  active
+) {
+
+  explored = active;
+
+  targetExplore =
+    active ? 1 : 0;
+
+  targetZoom =
+    active ? 1.48 : 1;
+
+  targetRotationX =
+    active ? -0.04 : 0;
+
+  targetRotationY =
+    active
+      ? targetRotationY + 0.5
+      : 0;
+
+  exploreButton.setAttribute(
+    "aria-expanded",
+    String(active)
+  );
+
+  if (active) {
+
+    buttonLabel.textContent =
+      "VOLTAR";
+
+    buttonArrow.textContent =
+      "↙";
+
+    explorePanel.classList.add(
+      "visible"
+    );
+
+    explorePanel.setAttribute(
+      "aria-hidden",
+      "false"
+    );
+
+    document.body.classList.add(
+      "exploring"
+    );
+
+  } else {
+
+    buttonLabel.textContent =
+      "EXPLORAR";
+
+    buttonArrow.textContent =
+      "↗";
+
+    explorePanel.classList.remove(
+      "visible"
+    );
+
+    explorePanel.setAttribute(
+      "aria-hidden",
+      "true"
+    );
+
+    document.body.classList.remove(
+      "exploring"
+    );
+
+  }
+
+}
+
+/* =========================================================
    MOUSE
 ========================================================= */
 
 window.addEventListener(
   "pointerdown",
   (event) => {
+
+    if (
+      event.target.closest(
+        "button"
+      ) ||
+      event.target.closest(
+        ".explore-panel"
+      )
+    ) {
+      return;
+    }
 
     dragging = true;
 
@@ -918,11 +1082,17 @@ window.addEventListener(
       event.deltaY *
       0.0007;
 
+    const minimumZoom =
+      explored ? 1.15 : 0.75;
+
+    const maximumZoom =
+      explored ? 1.65 : 1.35;
+
     targetZoom =
       THREE.MathUtils.clamp(
         targetZoom,
-        0.75,
-        1.35
+        minimumZoom,
+        maximumZoom
       );
 
   },
@@ -935,19 +1105,13 @@ window.addEventListener(
    BOTÃO EXPLORAR
 ========================================================= */
 
-const exploreButton =
-  document.querySelector(
-    "#exploreButton"
-  );
-
 exploreButton.addEventListener(
   "click",
   () => {
 
-    targetZoom = 1.28;
-
-    targetRotationX = 0;
-    targetRotationY += 0.25;
+    setExploreMode(
+      !explored
+    );
 
     exploreButton.classList.add(
       "active"
@@ -960,6 +1124,28 @@ exploreButton.addEventListener(
       );
 
     }, 500);
+
+  }
+);
+
+/* =========================================================
+   ESC PARA VOLTAR
+========================================================= */
+
+window.addEventListener(
+  "keydown",
+  (event) => {
+
+    if (
+      event.key === "Escape" &&
+      explored
+    ) {
+
+      setExploreMode(
+        false
+      );
+
+    }
 
   }
 );
@@ -1009,8 +1195,25 @@ function animate() {
   const elapsed =
     clock.getElapsedTime();
 
+  /*
+    SUAVIZA O MODO EXPLORAÇÃO
+  */
+
+  currentExplore +=
+    (
+      targetExplore -
+      currentExplore
+    ) *
+    0.035;
+
   blackHoleMaterial.uniforms.uTime.value =
     elapsed;
+
+  blackHoleMaterial.uniforms.uZoom.value =
+    currentZoom;
+
+  blackHoleMaterial.uniforms.uExplore.value =
+    currentExplore;
 
   /*
     SUAVIZA MOVIMENTO
@@ -1047,6 +1250,20 @@ function animate() {
   universe.rotation.y =
     currentRotationY;
 
+  /*
+    PEQUENO MOVIMENTO DE PROFUNDIDADE
+  */
+
+  universe.position.z =
+    Math.sin(
+      elapsed *
+      (
+        0.12 +
+        currentExplore * 0.12
+      )
+    ) *
+    0.015;
+
   universe.scale.set(
     currentZoom,
     currentZoom,
@@ -1054,13 +1271,16 @@ function animate() {
   );
 
   /*
-    MOVIMENTO AUTOMÁTICO MUITO SUAVE
+    MOVIMENTO AUTOMÁTICO
   */
 
   if (!dragging) {
 
     targetRotationY +=
-      0.00012;
+      (
+        0.00012 +
+        currentExplore * 0.00018
+      );
 
   }
 
@@ -1088,9 +1308,11 @@ window.addEventListener(
         );
 
       if (loader) {
+
         loader.classList.add(
           "hidden"
         );
+
       }
 
     }, 900);
