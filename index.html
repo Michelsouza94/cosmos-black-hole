@@ -63,12 +63,71 @@
 
         </header>
 
+        <!-- PAINEL DE EXPLORAÇÃO -->
+        <section
+          id="explorePanel"
+          class="explore-panel"
+          aria-hidden="true"
+        >
+
+          <div class="panel-line"></div>
+
+          <div class="panel-number">
+            01 — EVENT HORIZON
+          </div>
+
+          <h2>
+            O limite<br />
+            do retorno.
+          </h2>
+
+          <p>
+            O horizonte de eventos é a fronteira ao redor de um
+            buraco negro além da qual nada pode escapar,
+            nem mesmo a luz.
+          </p>
+
+          <div class="panel-data">
+
+            <div class="data-item">
+              <span>VELOCIDADE DE ESCAPE</span>
+              <strong>≥ C</strong>
+            </div>
+
+            <div class="data-item">
+              <span>LUZ</span>
+              <strong>SEM RETORNO</strong>
+            </div>
+
+            <div class="data-item">
+              <span>ESTADO</span>
+              <strong>SINGULARIDADE</strong>
+            </div>
+
+          </div>
+
+          <div class="panel-close-hint">
+            ESC — RETORNAR
+          </div>
+
+        </section>
+
         <!-- BOTÃO -->
         <div class="bottom-left">
 
-          <button id="exploreButton" class="explore-button">
-            <span>EXPLORAR</span>
-            <span class="arrow">↗</span>
+          <button
+            id="exploreButton"
+            class="explore-button"
+            type="button"
+            aria-expanded="false"
+          >
+            <span class="button-label">
+              EXPLORAR
+            </span>
+
+            <span class="arrow">
+              ↗
+            </span>
           </button>
 
           <div class="instructions">
@@ -97,6 +156,7 @@
 
       <!-- INDICADOR DE CARREGAMENTO -->
       <div id="loader" class="loader">
+
         <div class="loader-text">
           INITIALIZING
         </div>
@@ -104,6 +164,7 @@
         <div class="loader-line">
           <span></span>
         </div>
+
       </div>
 
     </div>
