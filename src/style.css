@@ -1,0 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400&family=Manrope:wght@300;400;600;700&display=swap');
+
+:root { font-family: Manrope, sans-serif; color: #fff; background: #020204; }
+* { box-sizing: border-box; }
+html, body, #app { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+body { background: #020204; }
+canvas { display:block; width:100%; height:100%; cursor: grab; }
+canvas:active { cursor: grabbing; }
+.hud { position:fixed; inset:0; pointer-events:none; display:flex; flex-direction:column; justify-content:space-between; padding:38px 42px; }
+.brand { max-width:390px; text-shadow:0 2px 20px #000; }
+.eyebrow { font:12px 'DM Mono',monospace; letter-spacing:.28em; opacity:.62; }
+h1 { margin:10px 0 8px; font-size:clamp(32px,5vw,72px); line-height:.9; letter-spacing:-.055em; font-weight:600; }
+p { margin:0; color:rgba(255,255,255,.65); font-size:13px; line-height:1.6; }
+.hint { align-self:flex-end; font:11px 'DM Mono',monospace; letter-spacing:.08em; color:rgba(255,255,255,.55); }
+#loading { position:fixed; inset:0; display:grid; place-items:center; background:#020204; color:#fff; font:12px 'DM Mono',monospace; letter-spacing:.14em; transition:opacity .7s ease; }
+#loading span { animation:blink 1s infinite; }
+@keyframes blink { 50% { opacity:.2; } }
+@media (max-width:600px) {
+  .hud { padding:22px; }
+  .hint { font-size:9px; }
+  p { font-size:11px; max-width:280px; }
+}
